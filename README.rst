@@ -22,12 +22,28 @@ Template Syntax
                 which will be set to the text which was found in that position.
 
         * matching for placeholders is *greedy* by default. As much text 
-          as possible will be matched, you can see how this works in the :ref:`Examples`
+          as possible will be matched, you can see how this works in the `Examples`_
+
+        * you can change the matching behavior by including a **<regex>** tag.
+
+
+        .. code-block:: python
+                
+                {varname<regex>} # `varname` is the capture attribute
+                                 # `regex` is a regular expression to match
+
+                # this roughly translates to the regex:
+                "(?P<varname>regex)"
 
 
         :Inline Regular Expressions: you can put any regular expression in the template string
                 which is supported by python's `re module <https://docs.python.org/2/library/re.html>`_.
                 this will affect which strings will match the template, but will not capture any data.
+
+
+        .. code-block:: python
+                
+                ^{name<[a-z]>}$ # matches a single lowercase word on it's own line
 
 
         :Optional Placeholders: **{varname<regex>}?** is an *optional placeholder*. If the regex pattern
@@ -50,6 +66,38 @@ Template Syntax
 
                 * the repeat syntax also works with regular placeholders **{varname}!<n>**... 
                   this will capture each (whitespace delimited) token until the next pattern is found
+
+                * you can also use **!!** which will match every occurance of the pattern in the 
+                  text, regardless of what shows up in between, up until the end of the template
+
+
+        :Referencing previous placeholders: you can reference the matches to previous placeholders
+                by writing **\\g<name>** where *name* is the name of the placeholder. \\g<name> will match
+                the captured text exacty and will not capture a value.
+
+        * You can also use \\g<name> inside of the regex for a placeholder, in which case it will be captured.
+        
+                .. code-block:: python
+
+                        {name<^.*\g<name>.*$>} 
+                        # matches any line of text which contains whatever 
+                        # was captured by placeholder 'name'
+        This is the same syntax that's used by the `re module <https://docs.python.org/2/library/re.html>`_
+
+
+        :Embedding other textobjects: you can embed textobjects into template strings using **{{classname}}**
+                make sure that the class of the textobject is available within the enclosing scope
+
+
+        :Embedding template strings: you can also use template string syntax within a placeholder regex.
+
+                .. code-block:: python
+                        
+                        {placeholder<{inner1} {inner2}>}
+
+                the resulting object will have an attribute called `placeholder` which is itself
+                a textobject with attributes `inner1` and `inner2`
+
 
 .. _Examples:
 
@@ -104,6 +152,36 @@ ___________________________________
 Much of the time there is a repeating pattern in the data. This is
 easy to capture using a textobject. To illustrate this we will make a 
 textobject which recognizes JSON
+
+a json object begins with **{** then we can have:
+        
+        1. **"name":"value",** as many times as needed
+
+        2. **"name":"value"** only once
+
+        3. **"name":[** followed by **"value"** or **"value",** ,  and eventually **]** or **],**
+
+then it ends with **}**
+
+The template for this goes as follows:
+
+.. code-block:: python
+        
+        """{
+                {entries<"{name}":"{value},">}!!?
+                {lists<"{name}":[]>}
+                
+
+
+        }"""
+
+
+
+
+
+
+
+
 
 
 
