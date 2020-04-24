@@ -46,12 +46,12 @@ Template Syntax
                 ^{name<[a-z]>}$ # matches a single lowercase word on it's own line
 
 
-        :Optional Placeholders: **{varname<regex>}?** is an *optional placeholder*. If the regex pattern
+        :Optional Placeholders: **{varname<regex>?}** is an *optional placeholder*. If the regex pattern
                 matches the text at that position then the text will be captured in an attribute called
                 `varname`. But if it does not match the placeholder will be ignored.
 
 
-        :Repeating Matches: the syntax **{varname<regex>}!** signifies a repeating match. Any text 
+        :Repeating Matches: the syntax **{varname<regex>!}** signifies a repeating match. Any text 
                 matched by the `regex` at that position will be added to a list called `varname`. This
                 will be repeated until there is some text encountered which does not match the `regex`
                 pattern. To match only a limited number of times you can use **<n>** where n is the
@@ -59,12 +59,9 @@ Template Syntax
                                
                 .. code-block:: python
 
-                        {varname<regex>}!<n>
+                        {varname<regex>!n}
 
-                * This is distinct from **{varname<regex>}*n** which will match exactly n times and 
-                  will *fail* if there are more or fewer matches in the text
-
-                * the repeat syntax also works with regular placeholders **{varname}!<n>**... 
+                * the repeat syntax also works with regular placeholders **{varname!n}**... 
                   this will capture each (whitespace delimited) token until the next pattern is found
 
                 * you can also use **!!** which will match every occurance of the pattern in the 
@@ -85,7 +82,7 @@ Template Syntax
         This is the same syntax that's used by the `re module <https://docs.python.org/2/library/re.html>`_
 
 
-        :Embedding other textobjects: you can embed textobjects into template strings using **{{classname}}**
+        :Embedding other textobjects: you can embed textobjects into template strings using **@classname**
                 make sure that the class of the textobject is available within the enclosing scope
 
 
