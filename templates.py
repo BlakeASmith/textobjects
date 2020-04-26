@@ -9,133 +9,154 @@ Supported Syntax:
     @Name        |  embed another text object with class name `Name`
 """
 import re
-from anytree import NodeMixin, RenderTree
-from functools import reduce
-from itertools import takewhile
+from types import SimpleNamespace
+from functools import partial, wraps
 
-class TextNode(NodeMixin):
-    """A Node which contains a substring of a larger body of text"""
-    def __init__(self, text=None, parent=None, children=None):
-        self.text = text
-        self.expanded_text = None
-        self.wildcards = None
+def match(expression, text, optional=False):
+    _match = expression.match(text)
+    if _match:
+        subtext, matchtext = text[_match.end(0):], _match.group(0)
+    elif optional:
+        subtext, matchtext = text, None
+    else:
+        subtext, matchtext = None, None
+    return (subtext, matchtext)
+
+def repeat_match(expression, text, optional=False, limit=None):
+    subtext = returntext = text
+    matches = []
+    while True:
+        subtext, matchtext = match(expression, subtext, optional)
+        if subtext:
+            returntext = subtext
+        if matchtext:
+            matches.append(matchtext)
+            continue
+        break
+    return (returntext, matches)
+
+def findall(expression, text, optional=False, limit=None):
+    print(findall, text, optional, limit, expression)
+    return text
+
+class Placeholder:
+    def __init__(self, name=None, subexpr=None,  wildcards=None, limit=None, parent=None):
+        self.name, self.subexpr, self.wildcards, self.limit = name, subexpr, wildcards, limit
         self.parent = parent
-        if children:
-            self.children = children
-
-    def __init_subclass__(cls, outer_text, *args, **kwargs):
-        super(TextNode, cls).__init_subclass__(*args, **kwargs)
-        cls.outer_text = outer_text
 
     def __str__(self):
-        return self.expanded_text or self.text
+        return str(self.name)
 
     def __repr__(self):
-        return self.expanded_text or self.text
+        return str(self)
 
-def build_tree(template):
-    """create a tree associating outer placeholders to inner placeholders"""
-    class Placeholder(TextNode, outer_text=template): pass
+def split_regex_and_placeholders(template, parent=None):
+    """separate the regex and placeholder sections of the template"""
+    elements, regexstack, bracestack = [], [0], []
+    placeholder = re.compile(
+            '{(?P<name>\w+)' 
+            '<?(?P<subexpr>.*(?=>))?>?'
+            '(?P<wildcards>!?!?\??)'
+            '(?P<limit>\d?\d?\d?)}')
 
-    stack = [] 
-    root = cur_node = Placeholder(template)
-    level = 0 # track the level of nesting
-    for i, c in enumerate(template):
-        if c == '{':
-            cur_node = Placeholder(parent=cur_node)
-            level += 1
-            stack.append(i)
-        elif c == '}':
-            level -= 1
-            cur_node.text = template[stack.pop():i+1]
-            cur_node = cur_node.parent
+    def addregex(end):
+        if regexstack:
+            patt = template[regexstack.pop():end]
+            if patt:
+                elements.append(SimpleNamespace(type='r',pattern=re.compile(patt)))
 
-    return root
-
-def expanded(s, node):
-    # convert simple placeholders to regex placeholders
-    exp = re.sub('{(\w+?)}', '{\g<1><.+(?=\\\\s)>}', s)
-    # extract name, regex, and wildcards
-    placeholder = re.compile('{(?P<var>\w*)<(?P<subexpr>.*?)>(?P<wildcards>!?!?\??(?P<num>\d?\d?\d?))}')
-    placeholders = [m.groupdict() for m in placeholder.finditer(s)]
-
-    exp = placeholder.sub('(?P<\g<var>>\g<subexpr>)', exp)
-    return exp
-
-def expand(template):
-    root = build_tree(template)
-    def _expand(root):
-        if not root.children:
-            return expanded(root.text, node=root)
-        for child in root.children:
-            root.text = expanded(root.text.replace(child.text, _expand(child)), node=root)
-        return root.text
-    return _expand(root)
-
-def indexed(template):
-    elements = []
-    regexstack, bracestack = [], []
-    regexstack.append(0)
-    placeholder = re.compile('{(?P<name>\w+\d*)<?(?P<subexpr>.*(?=>))?>?(?P<wildcards>!?!?\??)(?P<multiplier>\d?\d?\d?)}')
     for i, c in enumerate(template):
         if c == '{':
             if not bracestack: # end of a regex section
-                elements.append(('r', re.compile(template[regexstack.pop():i])))
+                addregex(i)
             bracestack.append(i)
         if c == '}':
             start = bracestack.pop()
             if not bracestack: # end of placeholder
-                _placeholder = placeholder.match(template[start:i+1]).groupdict()
-                if _placeholder['subexpr'] == None:
-                    _placeholder['subexpr'] = '.+?(?=\s|$)'
-                elements.append(('p', _placeholder))
+                _placeholder = Placeholder(**placeholder.match(template[start:i+1]).groupdict())
+                _placeholder.parent = parent
+                _placeholder.subexpr = _placeholder.subexpr if _placeholder.subexpr else '\s*\S+?(?=\s|$)'
+                _placeholder.type = 'p'
+                elements.append(_placeholder)
             # consider the text a regex until we encouter a new placeholder
-            regexstack.append(i+1)
-    if regexstack:
-        elements.append(('r', re.compile(template[regexstack.pop():])))
+            if not bracestack:
+                regexstack.append(i+1)
+    addregex(len(template))
     return elements
+
+def evalwildcards(wildcards, limit):
+    if wildcards:
+        optional = '?' in wildcards
+        if '!!' in wildcards:
+            evalscheme = partial(findall, optional=optional, limit=limit)
+        elif '!' in wildcards:
+            evalscheme = partial(repeat_match, optional=optional, limit=limit)
+        else:
+            evalscheme = partial(match, optional=False)
+    else:
+        evalscheme = partial(match, optional=False)
+
+    return evalscheme
+
+def evaluate(template, rec=False):
+    def func(text):
+        return text
+
+    all_attrs = {}
+    def _evaluate(template, attrs,  placeholder=Placeholder(), func=func, lvl=0):
+        evalscheme = partial(match, optional=False)
+        evalscheme = evalwildcards(placeholder.wildcards, placeholder.limit)    
+        if placeholder.wildcards:
+            if '!' in placeholder.wildcards and '{' in template:
+                def repeateval(text, *args, **kwargs):
+                    results = []
+                    remaining = text
+                    while True:
+                        returntext = remaining
+                        try:
+                            result, fun = evaluate(template, rec=True)
+                            remaining = fun(remaining)
+                            results.append(result)
+                            if not remaining:
+                                return (returntext, results)
+                        except:
+                            print(template)
+                            return (remaining, results)
+                    
+                evalscheme = repeateval
+
+        elements = split_regex_and_placeholders(template, parent=placeholder)
+        for element in elements:
+            if element.type == 'p': # `pattern` is a placeholder
+                if placeholder.name not in attrs:
+                    attrs[placeholder.name] = {}
+                func =  _evaluate(element.subexpr, attrs[placeholder.name], element, func, lvl+1)
+
+            elif element.type == 'r': # `pattern` is a regex
+                @wraps(func)
+                def evalpattern(text, func=func, pattern=element.pattern, attrs=attrs):
+                    newtext, match = evalscheme(expression=pattern, text=func(text))
+                    if placeholder.name:
+                        if len(elements) == 1 or type(match) is list:
+                            attrs[placeholder.name] = match
+
+                    return newtext
+                func = evalpattern
             
+        return func
+
+    def _func(text):
+        remaining = _evaluate(template, attrs=all_attrs)(text)
+        return all_attrs[None]
+    if not rec:
+        return _func
+    else:
+        func = _evaluate(template, attrs=all_attrs)
+        return (all_attrs[None], func)
 
 
-def match_template(template, text):
-    attrs={"groups":[]}
-    def match(template=template, text=text, start=0, subexpr=False, repeat_match=False):
-        elements = indexed(template)
-        for mark, element in elements:
-            print(element, text[start:])
-            if mark == 'r': # process as regex
-                matches = []
-                while True:
-                    _match = element.match(text[start:])
-                    if not _match:
-                        return matches if repeat_match else None
-                    start += _match.end(0)
-                    grps = _match.groups()
-                    if grps:
-                        attrs['groups'].append(grps)
-                    if repeat_match:
-                        matches.append(_match.group(0))
-                    elif subexpr:
-                        return _match.group(0)
-                    else:
-                        break
-            elif mark == 'p': #process as placeholder
-                if '!' in element['wildcards']:
-                    attrs[element['name']] = match(element['subexpr'], text, start, True, True)
-                else:
-                    attrs[element['name']] = match(element['subexpr'], text, start, True)
-                start += len(attrs[element['name']])
-    match()
-    return attrs
-
-
-        
-template = 'TODO: {items!} {foo}'
-
-print(match_template(template, "TODO: foobar baz fooo adawda"))
-
-    
-
+func = evaluate("TODO: {word<{foo} {bar!} {cat}>}")
+print(func("TODO: foo fob fo fish cat  barrrr "))
 
 
 
