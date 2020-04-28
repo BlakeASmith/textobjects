@@ -9,11 +9,16 @@ Welcome to textobjects's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+        template module
 
 .. include::   README.rst
 
-template module
------------------------------------------
+Module Documentation
+============================================
+
+The template module
+______________________
+
 .. automodule:: template
    :members:
    :undoc-members:

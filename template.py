@@ -13,13 +13,19 @@ from functools import wraps
 # TODO: refactor wrapping functions 
 
 PLACEHOLDER_START = '{'
+"""The start symbol for a Placeholder"""
 PLACEHOLDER_END = '}'
+"""The terminating symbol for a Placeholder"""
+
 PLACEHOLDER_PATTERN = re.compile(
         '{(?P<name>\w+)' 
         '(<(?P<subexpr>.*?(?=>))>)?'
         '(?P<wildcards>\D*)'
         '(?P<limit>\d?\d?\d?)}')
+"""The pattern used to extract Placeholders from the template"""
+
 DEFAULT_PLACEHOLDER_SUBEXPR = '\s*\S+?(?=\s|$)'
+"""The pattern to be substituted when no pattern is specified for the placeholder eg. (**{name}**)"""
 
 @dataclass
 class Placeholder:
@@ -36,33 +42,63 @@ class Placeholder:
 
 @dataclass
 class ExecutionContext:
+    """The context object passed along in each TemplateTransformation"""
     text: str
+    """the inital text"""
+    
+    remaining_text: str = None
+    """The portion of the text remaining after the previous TemplateTransformation"""
+
+    consumed_text: str = None
+    """the portion of text which has been consumed in a previous TemplateTransformation but can still
+    be matched againsed """
+
+TemplateTransformation = Callable[[str], Tuple[ExecutionContext, Any]]
+"""Type definition for the function type which is composed to create an evaluator for a template"""
+
+TemplatePattern = Union[Pattern, Iterable[Tuple[Optional[Placeholder], Pattern]]]
+"""Either a parsed template or a re.RegexObject"""
 
 @dataclass
 class EvaluationContext:
-    func: Callable[[str], ExecutionContext]
+    """The context object which is passed along while defining TemplateTransformations"""
+    func: TemplateTransformation
+    """The current TemplateTransformation"""
     placeholder: Placeholder
-    pattern: Union[Pattern, Iterable[Tuple[Optional[Placeholder], Pattern]]]
+    """The current Placeholder being considered"""
+    pattern: TemplatePattern
+    """Either the Pattern to be evaluated, or parsed template of the see `template.parse`_"""
 
-TemplateEvaluation = Callable[[str], Tuple[ExecutionContext, Any]]
+class Wildcard(ABC):
+    """Base class for wildcards. The purpose of this class is to simplify wrapping
+    TemplateTransformations and automatically maintain a mapping of the defined wildcards.
 
-@dataclass(frozen=True)
-class Wildcard:
-    name: str
-    symbol: str
-    evaluator: Callable[[EvaluationContext], TemplateEvaluation] 
-    types: ClassVar[Mapping[str, 'Wildcard']] = {}
-    default_evaluator: ClassVar[Callable[[EvaluationContext], TemplateEvaluation]] = None
+    Args: 
+        symbol (str): The symbol which will specify the wildcard in the Placeholder string
 
-    def __post_init__(self):
-        if self.name not in self.__class__.types:
-            self.__class__.types[self.name] = self
-        else:
-            raise Warning(f'there is already a {self.name} wildcard')
+        default (boolean): Sets the subclass as the default wildcard. 
+             When no wildcards are given in a Placeholder the transformation for this wildcard will be applied
+
+    Note:
+        Subclasses of wildcard are not instantiable. The __init__() method of any 
+        subclass is replaced by
+
+        .. code:: 
+
+            def __init__(self): 
+                raise NotImplementedError('Wildcard classes cannot be instantiated')
+
+    """
+    types: Mapping[str, 'Wildcard'] = {}
+    """A mapping from the Wildcard names to the Wildcard subclasses"""
+    types_by_symbol: Mapping[str, 'Wildcard'] = {}
+    """A mapping from the Wildcard symbols to the Wildcard subclasses"""
+    default_transformation: Callable[[EvaluationContext], TemplateTransformation] = None
+    """The template.TemplateTransformation used if no Wildcards are present in the Placeholder"""
 
     def __init_subclass__(cls, symbol, *args, default=False, **kwargs):
         super(Wildcard, cls).__init_subclass__(*args, **kwargs)
-        def evaluate(ctx: EvaluationContext) -> TemplateEvaluation:
+        def evaluate(ctx: EvaluationContext) -> TemplateTransformation:
             if isinstance(ctx.pattern, list):
                 @wraps(ctx.func)
                 def wrap_recurse(text):
@@ -74,26 +110,86 @@ class Wildcard:
                 @wraps(ctx.func)
                 def wrap_pattern(text):
                     context, obj = ctx.func(text)
-                    return cls.handle_wildcard(context, obj, cls.handle_pattern(ctx.pattern))
+                    return cls.handle_wildcard(context, obj, cls.handle_pattern(ctx.pattern, ctx))
 
-        cls(name=cls.__name__, symbol=symbol, evaluator=evaluate)
-        if not Wildcard.default_evaluator and default:
-            Wildcard.default_evaluator = evaluate
+        cls.symbol = symbol
+        if cls.__name__ not in Wildcard.types:
+            Wildcard.types[cls.__name__] = cls
+            Wildcard.types_by_symbol[symbol] = cls
+        else:
+            raise Warning(f'there is already a {self.name} wildcard')
+        if not Wildcard.default_transformation and default:
+            Wildcard.default_transformation = evaluate
         elif default:
             raise Exception('there is already a default evaluator')
+
+        def __init__(self): raise NotImplementedError('Wildcard classes cannot be instantiated')
+        cls.__init__ = __init__
 
     def __str__(self):
         return self.symbol
 
-    @classmethod
-    @abstractmethod
-    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
-        pass
 
     @classmethod
     @abstractmethod
-    def handle_wildcard(ctx: ExecutionContext, obj: Any, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+    def handle_pattern(cls, pattern: Pattern, ctx: ExecutionContext) -> TemplateTransformation:
+        """This method handles the case that the subexpression for a placeholder is 
+        just a python regular expression. The method should produce a TemplateTransformation
+        using the pattern
+
+        Args:
+            pattern (re.RegexObject): The compiled pattern replating to the current placeholder
+            ctx (template.ExecutionContext): The execution context for the transformation
+
+        Returns:
+            (~template.TemplateTransformation): a TemplateTransformation to be applied. The storage of the 
+            result will be handled in `Wildcard.handle_pattern` Here's an example
+            which just matches the text against the regex and returns the matched text to be stored
+
+            .. code::
+                
+                @classmethod
+                def handle_pattern(cls, pattern, ctx):
+                    def transform(text):
+                        match = pattern.match(text)
+                        if not match:
+                            raise ValueError(f'{text} does not match {pattern}')
+                        ctx.remaining_text = ctx.remaining_text[match.end(0):]
+                        return (ctx, match.group(0))
+                    return transform
+
+
+        """
         pass
+
+    @classmethod
+    def handle_wildcard(ctx: ExecutionContext, obj: SimpleNamespace, transform: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
+        """Handles storage and forwarding of the data produced from the TemplateTransformation for this wildcard. 
+        By default it stores the return of `transform` as an attribute of `obj` if the ExecutionContext.Placeholder is 
+        definded and has a name
+
+        .. code:: 
+
+            subctx, subobj = transform(ctx.remaining_text)
+            if ctx.placeholder and ctx.placeholder.name:
+                setattr(obj, ctx.placeholder.name, subobj)
+            return (subctx, obj)
+
+        Args:
+            ctx (~template.ExecutionContext): the execution context
+            obj (SimpleNamespace): the namespace in which placeholder results can be stored 
+            transform (template.TemplateTransformation): The transformation which is to be applied 
+
+        Returns:
+            (Tuple[~template.ExecutionContext, SimpleNamespace]): a tuple containing the updated execution context and
+            the updated `obj`
+
+        """
+        subctx, subobj = transform(ctx.text)
+        if ctx.placeholder and ctx.placeholder.name:
+            setattr(obj, ctx.placeholder.name, subobj)
+        return (subctx, obj)
+
         
 def parse_placeholder(placeholder: str):
     """extract name, expression, and wildcards from the text of a placeholder
@@ -102,7 +198,7 @@ def parse_placeholder(placeholder: str):
         placeholder (str): the string representing the placeholder
 
     Returns:
-        a ~template.Placeholder
+        (template.Placeholder): A Placeholder from the string
     """
     match = PLACEHOLDER_PATTERN.match(placeholder).groupdict()
 
@@ -117,17 +213,16 @@ def __addpattern(pattern, lst, placeholder=None):
         lst.append((placeholder, re.compile(pattern)))
 
 def parse(template: str):
-    """produce a list of regex patterns associated with the
+    """produce a list of Patterns associated with the
     appropriate placeholder information
     
     Args:
         template (str): the template string to parse
 
     Returns:
-        a list of tuples (placeholder, pattern) where `placeholder`
-        is a namespace with attributes name, subexpr, wildcards, limit
-        and `pattern` is a compiled regex pattern or another list of
-        tuples.
+
+    (Iterable[Tuple[Optional[Placeholder], TemplatePattern]]):
+        each Placeholder in the template assocated to it's pattern
 
     """
     rstack, pstack, results = [0], [], []
@@ -151,6 +246,8 @@ def parse(template: str):
     return results
 
 def create_eval_func(parsed_template, func=lambda text: (SimpleNamespace(text=text), SimpleNamespace())):
+    """Apply all TemplateTransformations specified by the wildcards for each Placeholder, TemplatePattern pair
+    in the parsed template """
     for placeholder, pattern in parsed_template:
         for name in Placeholder.wildcards:
             func = Wildcard.types[name].evaluator(EvaluationContext(func, placeholder, pattern))
@@ -158,11 +255,11 @@ def create_eval_func(parsed_template, func=lambda text: (SimpleNamespace(text=te
 
 class MatchWildcard(Wildcard, symbol='=', default=True):
     @classmethod
-    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+    def handle_pattern(pattern: Pattern) -> TemplateTransformation:
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
         pass
 
     # if not isinstance(ctx.pattern, list):
@@ -186,11 +283,11 @@ class MatchWildcard(Wildcard, symbol='=', default=True):
 
 class RepeatMatch(Wildcard, symbol='!'):
     @classmethod
-    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+    def handle_pattern(pattern: Pattern) -> TemplateTransformation:
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
         pass
 
     # if not isinstance(ctx.pattern, list):
@@ -228,11 +325,11 @@ class RepeatMatch(Wildcard, symbol='!'):
 
 class LooseRepeatMatch(Wildcard, symbol='!!'):
     @classmethod
-    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+    def handle_pattern(pattern: Pattern) -> TemplateTransformation:
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
         pass
     # func, pattern, placeholder = ctx.func, ctx.pattern, ctx.placeholder
     # if not isinstance(pattern, list):
@@ -264,23 +361,22 @@ class LooseRepeatMatch(Wildcard, symbol='!!'):
 
 class OptionalWildcard(Wildcard, symbol='?'):
     @classmethod
-    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+    def handle_pattern(pattern: Pattern) -> TemplateTransformation:
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
         pass
 
 class LooseMatch(Wildcard, symbol='=>'):
     @classmethod
-    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+    def handle_pattern(pattern: Pattern) -> TemplateTransformation:
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
         pass
 
-print(Wildcard.types.keys())
     # def search_pattern(text, func=ctx.func, pattern=ctx.pattern, placeholder=ctx.placeholder):
         # context, obj = func(text)
         # subtext = context.text

@@ -13,7 +13,7 @@ but we'd still like to read that text as some kind of structured data. This
 is exactly what **textobjects** is for!
 
 Template Syntax
-------------------------------------------------------------
+_____________________________________
 
 **textobjects** uses string templates to create new formats:
 
@@ -99,7 +99,10 @@ Template Syntax
 .. _Examples:
 
 Examples
---------------------------------------------------------------------
+====================================================================
+
+Basic Usage
+_____________________________________
 
 
 Suppose we want to pull all of the 'TODO:' lines out of our source files
