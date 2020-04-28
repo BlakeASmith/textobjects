@@ -1,18 +1,8 @@
-"""Convert between template strings and regular expressions
-
-Supported Syntax:
-    {var}        |  to mark a placeholder with the name `var`
-    {var<regex>} |  to mark a placeholder which matches the regex `regex`
-    !            |  to repeat a placeholder any number of times
-    !!           |  same as `!` but will allow non-matching text in between matches
-    ?            |  to mark a placeholder as being optional
-    @Name        |  embed another text object with class name `Name`
-"""
 import re
 from types import SimpleNamespace
 from functools import partial, wraps
 
-def match(expression, text, optional=False):
+def match(text, expression, optional=False):
     _match = expression.match(text)
     if _match:
         subtext, matchtext = text[_match.end(0):], _match.group(0)
@@ -22,33 +12,60 @@ def match(expression, text, optional=False):
         subtext, matchtext = None, None
     return (subtext, matchtext)
 
-def repeat_match(expression, text, optional=False, limit=None):
+def repeat_match(text, expression,  optional=False, limit=None):
     subtext = returntext = text
-    matches = []
+    matches, counter = [], 0
     while True:
         subtext, matchtext = match(expression, subtext, optional)
+        counter += 1
         if subtext:
             returntext = subtext
+        if counter == limit:
+            return (returntext, matchtext)
         if matchtext:
             matches.append(matchtext)
             continue
         break
     return (returntext, matches)
 
-def findall(expression, text, optional=False, limit=None):
-    print(findall, text, optional, limit, expression)
-    return text
+def repeateval(text, template, func, optional=False):
+    results, remaining = [], func(text)
+    while True:
+        returntext = remaining
+        try:
+            result, fun = evaluate(template, rec=True)
+            remaining = fun(remaining)
+            results.append(result)
+            if not remaining or returntext == remaining:
+                return (returntext, results)
+        except: #did not match
+            return (remaining, results)
+
+def findall(text, template, func, optional=False, limit=None):
+    results, counter = [], 0
+    remaining = returntext = beforetext = func(text)
+    while remaining:
+        counter += 1
+        if counter == limit:
+            break
+        result, fun = evaluate(template, rec=True)
+        remaining = fun(remaining)
+        returntext = ''.join([c for c, cc in zip(reversed(remaining), reversed(beforetext[:len(remaining)])) if c == cc])
+        results.append(result)
+        if remaining == beforetext: 
+            remaining = remaining[1:]
+            beforetext = remaining
+    return (results, returntext)
+
 
 class Placeholder:
     def __init__(self, name=None, subexpr=None,  wildcards=None, limit=None, parent=None):
         self.name, self.subexpr, self.wildcards, self.limit = name, subexpr, wildcards, limit
         self.parent = parent
+        self.type = 'p'
 
     def __str__(self):
         return str(self.name)
-
-    def __repr__(self):
-        return str(self)
 
 def split_regex_and_placeholders(template, parent=None):
     """separate the regex and placeholder sections of the template"""
@@ -73,10 +90,8 @@ def split_regex_and_placeholders(template, parent=None):
         if c == '}':
             start = bracestack.pop()
             if not bracestack: # end of placeholder
-                _placeholder = Placeholder(**placeholder.match(template[start:i+1]).groupdict())
-                _placeholder.parent = parent
+                _placeholder = Placeholder(**placeholder.match(template[start:i+1]).groupdict(), parent=parent)
                 _placeholder.subexpr = _placeholder.subexpr if _placeholder.subexpr else '\s*\S+?(?=\s|$)'
-                _placeholder.type = 'p'
                 elements.append(_placeholder)
             # consider the text a regex until we encouter a new placeholder
             if not bracestack:
@@ -84,11 +99,16 @@ def split_regex_and_placeholders(template, parent=None):
     addregex(len(template))
     return elements
 
-def evalwildcards(wildcards, limit):
+def evalwildcards(wildcards, limit, template = None, func=None):
     if wildcards:
         optional = '?' in wildcards
-        if '!!' in wildcards:
-            evalscheme = partial(findall, optional=optional, limit=limit)
+        if '{' in template:
+            if '!!' in wildcards:
+                evalscheme = partial(findall, template=template, func=func, optional=optional)
+            elif '!' in wildcards:
+                evalscheme = partial(repeateval, template=template, func=func, optional=optional)
+        elif '!!' in wildcards:
+            evalscheme = partial(findall, template=template, func=func, optional=optional, limit=limit)
         elif '!' in wildcards:
             evalscheme = partial(repeat_match, optional=optional, limit=limit)
         else:
@@ -96,50 +116,41 @@ def evalwildcards(wildcards, limit):
     else:
         evalscheme = partial(match, optional=False)
 
+
     return evalscheme
 
 def evaluate(template, rec=False):
-    def func(text):
-        return text
-
     all_attrs = {}
-    def _evaluate(template, attrs,  placeholder=Placeholder(), func=func, lvl=0):
-        evalscheme = partial(match, optional=False)
-        evalscheme = evalwildcards(placeholder.wildcards, placeholder.limit)    
-        if placeholder.wildcards:
-            if '!' in placeholder.wildcards and '{' in template:
-                def repeateval(text, *args, **kwargs):
-                    results = []
-                    remaining = text
-                    while True:
-                        returntext = remaining
-                        try:
-                            result, fun = evaluate(template, rec=True)
-                            remaining = fun(remaining)
-                            results.append(result)
-                            if not remaining:
-                                return (returntext, results)
-                        except:
-                            print(template)
-                            return (remaining, results)
-                    
-                evalscheme = repeateval
+    def _evaluate(template, attrs,  placeholder=Placeholder(), func=lambda text: text):
+        evalscheme = evalwildcards(placeholder.wildcards, placeholder.limit, template, func)    
 
-        elements = split_regex_and_placeholders(template, parent=placeholder)
-        for element in elements:
-            if element.type == 'p': # `pattern` is a placeholder
+        # basecase, just a regex pattern
+        if '{' not in template:
+            def evalpattern(text, func=func , attrs=attrs):
+                newtext, match = evalscheme(func(text), re.compile(template))
+                if placeholder.name:
+                    attrs[placeholder.name] = match
+
+                return newtext
+            return evalpattern
+
+
+        for element in split_regex_and_placeholders(template, parent=placeholder):
+             if element.type == 'p': # `pattern` is a placeholder
                 if placeholder.name not in attrs:
                     attrs[placeholder.name] = {}
-                func =  _evaluate(element.subexpr, attrs[placeholder.name], element, func, lvl+1)
-
-            elif element.type == 'r': # `pattern` is a regex
-                @wraps(func)
+                if evalscheme == findall or evalscheme == repeateval:
+                    def wrapper(text, func=func):
+                        newtext, matches = evalscheme(func(text))
+                        if placeholder.name:
+                            attrs[placeholder.name] = matches
+                        return newtext
+                    func = wrapper
+                else:
+                    func = _evaluate(element.subexpr, attrs[placeholder.name], element, func)
+             else: # `element` is a regex and is part of some placeholder
                 def evalpattern(text, func=func, pattern=element.pattern, attrs=attrs):
-                    newtext, match = evalscheme(expression=pattern, text=func(text))
-                    if placeholder.name:
-                        if len(elements) == 1 or type(match) is list:
-                            attrs[placeholder.name] = match
-
+                    newtext, match = evalscheme(func(text), expression=re.compile(pattern))
                     return newtext
                 func = evalpattern
             
@@ -155,8 +166,8 @@ def evaluate(template, rec=False):
         return (all_attrs[None], func)
 
 
-func = evaluate("TODO: {word<{foo} {bar!} {cat}>}")
-print(func("TODO: foo fob fo fish cat  barrrr "))
+func = evaluate("TODO: {foo}!!")
+print(func("TODO: ~~foo fob~~ ~~fo sh cat~~  stuff that is nti un  ~~barrrr~~ "))
 
 
 
