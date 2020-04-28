@@ -10,6 +10,14 @@ Welcome to textobjects's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+.. include::   README.rst
+
+template module
+-----------------------------------------
+.. automodule:: template
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Indices and tables
