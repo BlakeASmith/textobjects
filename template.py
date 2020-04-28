@@ -1,8 +1,10 @@
 """Parse template strings to create evaluator functions"""
 import re
+from weakref import proxy
+from abc import ABC, abstractmethod
 from types import SimpleNamespace
 from dataclasses import dataclass
-from typing import Callable, Iterable, Any, Literal
+from typing import Callable, Iterable, Any, Mapping, Union, Pattern, Match, Tuple, Optional, ClassVar
 from functools import wraps
 
 # TODO: add support for escaping `{` and `}`
@@ -40,133 +42,59 @@ class ExecutionContext:
 class EvaluationContext:
     func: Callable[[str], ExecutionContext]
     placeholder: Placeholder
-    pattern: Any
+    pattern: Union[Pattern, Iterable[Tuple[Optional[Placeholder], Pattern]]]
 
-REPEAT_WILDCARD = '!'
-LOOSE_REPEAT_WILDCARD = '!!'
-OPTIONAL_WILDCARD = '?'
-LOOSE_MATCH_WILDCARD = '->'
+TemplateEvaluation = Callable[[str], Tuple[ExecutionContext, Any]]
 
-def wrap_and_match(ctx):
-    """match the pattern from the evaluation context and 
-    store it in the placeholder variabld"""
-    if not isinstance(ctx.pattern, list):
-        def match_placeholder(text, func=ctx.func):
-            context, obj = func(text)
-            match = ctx.pattern.match(context.text)
-            if not match:
-                raise ValueError(f'{context.text} does not match {ctx.pattern.pattern}')
-            if ctx.placeholder:
-                setattr(obj, ctx.placeholder.name, match.group(0))
-            context.text = context.text[match.end(0):]
-            return (context, obj)
-    else:
-        def match_placeholder(text, func=ctx.func):
-            context, obj = func(text)
-            subcontext, subobj = create_eval_function(ctx.pattern)(context.text)
-            if ctx.placeholder:
-                setattr(obj, ctx.placeholder.name, subobj)
-            return (subcontext, obj)
-    return match_placeholder
+@dataclass(frozen=True)
+class Wildcard:
+    name: str
+    symbol: str
+    evaluator: Callable[[EvaluationContext], TemplateEvaluation] 
+    types: ClassVar[Mapping[str, 'Wildcard']] = {}
+    default_evaluator: ClassVar[Callable[[EvaluationContext], TemplateEvaluation]] = None
 
-def wrap_and_repeatmatch(ctx):
-    if not isinstance(ctx.pattern, list):
-        def repeatmatch_placeholder(text, func=ctx.func, pattern=ctx.pattern, placeholder=ctx.placeholder):
-            context, obj = func(text)
-            results, subtext, count = [], context.text, 0
-            while True:
-                match = pattern.match(subtext)
-                if not match or count == placeholder.limit:
-                    break
-                count += 1
-                subtext = subtext[match.end(0):]
-                results.append(match.group(0))
-            setattr(obj, placeholder.name, results)
-            context.text = subtext
-            return (context, obj)
-    else:
-        def repeatmatch_placeholder(text, func=func, ctx=ctx):
-            context, obj = func(text)
-            fun = create_eval_function(pattern)
-            returntext = context.text
-            results = []
-            while True:
-                try:
-                    subcontext, subobj = fun(context.text)
-                    if subtext:
-                        returntext = subcontext.text
-                        results.append(subobj)
-                except:
-                    break
-            setattr(obj, ctx.placeholder.name, results)
-            context.text = returntext
-            return (context, obj)
-    return repeatmatch_placeholder
+    def __post_init__(self):
+        if self.name not in self.__class__.types:
+            self.__class__.types[self.name] = self
+        else:
+            raise Warning(f'there is already a {self.name} wildcard')
 
-def wrap_and_findall(ctx):
-    func, pattern, placeholder = ctx.func, ctx.pattern, ctx.placeholder
-    if not isinstance(pattern, list):
-        def findall_placeholder(text, func=func):
-            context, obj = func(text)
-            matches = pattern.finditer(context.text)
-            if not matches:
-                raise ValueError("{context.text} does not match {pattern.pattern}")
-            results = [m.group(0) for m in matches]
-            for res in results:
-                context.text = context.text.replace(res, '')
-            results = results[:min(len(results), placeholder.limit)]
-            setattr(obj, placeholder.name, results)
-            return (context, obj)
-    else:
-        def findall_placeholder(text, func=func):
-            context, obj = func(text)
-            results, returntext = [], context.text
-            eval_func = create_eval_function(pattern, search=True)
-            while True:
-                subcontext, subobj = eval_func(subtext)
-                results.append(subobj)
-                if not subcontext.text:
-                    break
-                returntext = subtext
-            setattr(obj, placeholder.name, results)
-            return (returntext, obj)
-    return findall_placeholder
+    def __init_subclass__(cls, symbol, *args, default=False, **kwargs):
+        super(Wildcard, cls).__init_subclass__(*args, **kwargs)
+        def evaluate(ctx: EvaluationContext) -> TemplateEvaluation:
+            if isinstance(ctx.pattern, list):
+                @wraps(ctx.func)
+                def wrap_recurse(text):
+                    context, obj = ctx.func(text)
+                    eval_func =  create_eval_func(ctx.pattern)
+                    return cls.handle_wildcard(context, obj, create_eval_func)
+                return wrap_recurse
+            else:
+                @wraps(ctx.func)
+                def wrap_pattern(text):
+                    context, obj = ctx.func(text)
+                    return cls.handle_wildcard(context, obj, cls.handle_pattern(ctx.pattern))
 
-def wrap_optional(ctx):
-    pass
+        cls(name=cls.__name__, symbol=symbol, evaluator=evaluate)
+        if not Wildcard.default_evaluator and default:
+            Wildcard.default_evaluator = evaluate
+        elif default:
+            raise Exception('there is already a default evaluator')
 
-def wrap_search(ctx):
-    def search_pattern(text, func=ctx.func, pattern=ctx.pattern, placeholder=ctx.placeholder):
-        context, obj = func(text)
-        subtext = context.text
-        if not isinstance(pattern, list):
-            match = pattern.search(subtext)
-            if not match:
-                raise ValueError(f"could not find {pattern.pattern} in {subtext}")
-            context.text = subtext[match.end(0):]
-            if placeholder:
-                setattr(obj, placeholder.name, match.group(0))
-            return (context, obj)
+    def __str__(self):
+        return self.symbol
 
-        searchmatches = pattern[0][1].finditer(subtext)
-        fun = create_eval_function(pattern[1:])
-        result = None
-        for match in searchmatches:
-            try:
-                subcontext, subobj = fun(context.text[match.end(0):])
-                return (subcontext, subobj)
-            except:
-                pass
-        raise ValueError(f"search failed")
-    return search_pattern
+    @classmethod
+    @abstractmethod
+    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+        pass
 
-WILDCARD_MAP = {
-        LOOSE_REPEAT_WILDCARD:wrap_and_findall,
-        REPEAT_WILDCARD:wrap_and_repeatmatch,
-        OPTIONAL_WILDCARD:wrap_optional,
-        LOOSE_MATCH_WILDCARD:wrap_search
-}
-
+    @classmethod
+    @abstractmethod
+    def handle_wildcard(ctx: ExecutionContext, obj: Any, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+        pass
+        
 def parse_placeholder(placeholder: str):
     """extract name, expression, and wildcards from the text of a placeholder
     
@@ -181,7 +109,7 @@ def parse_placeholder(placeholder: str):
     return Placeholder(
             name = match['name'], 
             subexpr = match['subexpr'] if match['subexpr'] else DEFAULT_PLACEHOLDER_SUBEXPR,
-            wildcards = re.findall("|".join(WILDCARD_MAP).replace('?', '\?'), match['wildcards']),
+            wildcards = re.findall("|".join(Wildcard.types).replace('?', '\?'), match['wildcards']),
             limit = int(match['limit']) if match['limit'] else None)
 
 def __addpattern(pattern, lst, placeholder=None):
@@ -222,21 +150,160 @@ def parse(template: str):
     __addpattern(template[rstack.pop():i-1], results)
     return results
 
-def wrap_wildcards(ctx):
-    func = ctx.func 
-    for wc in ctx.placeholder.wildcards:
-        func = WILDCARD_MAP[wc](ctx)
-    return func
-
 def create_eval_func(parsed_template, func=lambda text: (SimpleNamespace(text=text), SimpleNamespace())):
     for placeholder, pattern in parsed_template:
-        ctx = EvaluationContext(func, placeholder, pattern)
-        if placeholder and placeholder.wildcards:
-            func = wrap_wildcards(ctx)
-        else:
-            func = wrap_and_match(ctx)
-
+        for name in Placeholder.wildcards:
+            func = Wildcard.types[name].evaluator(EvaluationContext(func, placeholder, pattern))
     return func
+
+class MatchWildcard(Wildcard, symbol='=', default=True):
+    @classmethod
+    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+        pass
+
+    @classmethod
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+        pass
+
+    # if not isinstance(ctx.pattern, list):
+        # def match_placeholder(text, func=ctx.func):
+            # context, obj = func(text)
+            # match = ctx.pattern.match(context.text)
+            # if not match:
+                # raise ValueError(f'{context.text} does not match {ctx.pattern.pattern}')
+            # if ctx.placeholder:
+                # setattr(obj, ctx.placeholder.name, match.group(0))
+            # context.text = context.text[match.end(0):]
+            # return (context, obj)
+    # else:
+        # def match_placeholder(text, func=ctx.func):
+            # context, obj = func(text)
+            # subcontext, subobj = create_eval_function(ctx.pattern)(context.text)
+            # if ctx.placeholder:
+                # setattr(obj, ctx.placeholder.name, subobj)
+            # return (subcontext, obj)
+    # return match_placeholder
+
+class RepeatMatch(Wildcard, symbol='!'):
+    @classmethod
+    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+        pass
+
+    @classmethod
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+        pass
+
+    # if not isinstance(ctx.pattern, list):
+        # def repeatmatch_placeholder(text, func=ctx.func, pattern=ctx.pattern, placeholder=ctx.placeholder):
+            # context, obj = func(text)
+            # results, subtext, count = [], context.text, 0
+            # while True:
+                # match = pattern.match(subtext)
+                # if not match or count == placeholder.limit:
+                    # break
+                # count += 1
+                # subtext = subtext[match.end(0):]
+                # results.append(match.group(0))
+            # setattr(obj, placeholder.name, results)
+            # context.text = subtext
+            # return (context, obj)
+    # else:
+        # def repeatmatch_placeholder(text, func=func, ctx=ctx):
+            # context, obj = func(text)
+            # fun = create_eval_function(pattern)
+            # returntext = context.text
+            # results = []
+            # while True:
+                # try:
+                    # subcontext, subobj = fun(context.text)
+                    # if subtext:
+                        # returntext = subcontext.text
+                        # results.append(subobj)
+                # except:
+                    # break
+            # setattr(obj, ctx.placeholder.name, results)
+            # context.text = returntext
+            # return (context, obj)
+    # return repeatmatch_placeholder
+
+class LooseRepeatMatch(Wildcard, symbol='!!'):
+    @classmethod
+    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+        pass
+
+    @classmethod
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+        pass
+    # func, pattern, placeholder = ctx.func, ctx.pattern, ctx.placeholder
+    # if not isinstance(pattern, list):
+        # def findall_placeholder(text, func=func):
+            # context, obj = func(text)
+            # matches = pattern.finditer(context.text)
+            # if not matches:
+                # raise ValueError("{context.text} does not match {pattern.pattern}")
+            # results = [m.group(0) for m in matches]
+            # for res in results:
+                # context.text = context.text.replace(res, '')
+            # results = results[:min(len(results), placeholder.limit)]
+            # setattr(obj, placeholder.name, results)
+            # return (context, obj)
+    # else:
+        # def findall_placeholder(text, func=func):
+            # context, obj = func(text)
+            # results, returntext = [], context.text
+            # eval_func = create_eval_function(pattern, search=True)
+            # while True:
+                # subcontext, subobj = eval_func(subtext)
+                # results.append(subobj)
+                # if not subcontext.text:
+                    # break
+                # returntext = subtext
+            # setattr(obj, placeholder.name, results)
+            # return (returntext, obj)
+    # return findall_placeholder
+
+class OptionalWildcard(Wildcard, symbol='?'):
+    @classmethod
+    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+        pass
+
+    @classmethod
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+        pass
+
+class LooseMatch(Wildcard, symbol='=>'):
+    @classmethod
+    def handle_pattern(pattern: Pattern) -> TemplateEvaluation:
+        pass
+
+    @classmethod
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateEvaluation) -> Tuple[ExecutionContext, Any]:
+        pass
+
+print(Wildcard.types.keys())
+    # def search_pattern(text, func=ctx.func, pattern=ctx.pattern, placeholder=ctx.placeholder):
+        # context, obj = func(text)
+        # subtext = context.text
+        # if not isinstance(pattern, list):
+            # match = pattern.search(subtext)
+            # if not match:
+                # raise ValueError(f"could not find {pattern.pattern} in {subtext}")
+            # context.text = subtext[match.end(0):]
+            # if placeholder:
+                # setattr(obj, placeholder.name, match.group(0))
+            # return (context, obj)
+
+        # searchmatches = pattern[0][1].finditer(subtext)
+        # fun = create_eval_function(pattern[1:])
+        # result = None
+        # for match in searchmatches:
+            # try:
+                # subcontext, subobj = fun(context.text[match.end(0):])
+                # return (subcontext, subobj)
+            # except:
+                # pass
+        # raise ValueError(f"search failed")
+    # return search_pattern
 
 def evaluate(template: str):
     """evaluate the template string
@@ -256,7 +323,6 @@ def evaluate(template: str):
         ctx, result = func(text)
         return result
     return wrapper
-
 
 if __name__ == '__main__':
     fun = evaluate('TODO: {item<.*>->}')
