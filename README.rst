@@ -12,7 +12,7 @@ Other times the data format is out of our control, such as in a config or log fi
 but we'd still like to read that text as some kind of structured data. This
 is exactly what **textobjects** is for!
 
-see the full docs at `https://blakeasmith.github.io/textobjects/`_
+see the full docs  here:https://blakeasmith.github.io/textobjects
 
 Template Syntax
 _____________________________________
