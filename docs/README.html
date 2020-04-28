@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Welcome to textobjects’s documentation! &mdash; textobjects 0.0.1 documentation</title>
+  <title>Template Syntax &mdash; textobjects 0.0.1 documentation</title>
   
 
   
@@ -50,7 +50,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> textobjects
+            <a href="index.html" class="icon icon-home"> textobjects
           
 
           
@@ -82,20 +82,12 @@
             
               <!-- Local TOC -->
               <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Welcome to textobjects’s documentation!</a><ul>
-<li><a class="reference internal" href="#template-syntax">Template Syntax</a></li>
+<li><a class="reference internal" href="#">Template Syntax</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#examples">Examples</a><ul>
 <li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li><a class="reference internal" href="#repeating-patterns">Repeating Patterns</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-documentation">Module Documentation</a><ul>
-<li><a class="reference internal" href="#the-template-module">The template module</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 </div>
             
@@ -110,7 +102,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">textobjects</a>
+          <a href="index.html">textobjects</a>
         
       </nav>
 
@@ -139,15 +131,15 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#">Docs</a> &raquo;</li>
+      <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Welcome to textobjects’s documentation!</li>
+      <li>Template Syntax</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/README.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -160,11 +152,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="welcome-to-textobjects-s-documentation">
-<h1>Welcome to textobjects’s documentation!<a class="headerlink" href="#welcome-to-textobjects-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-</div>
-<hr class="docutils" />
+  <hr class="docutils" />
 <p><strong>textobjects</strong> is a python module for reading and encoding plain
 text data in arbitrary formats</p>
 <p>Often we want to store some data programmatically, but we also need
@@ -175,7 +163,7 @@ not always be sufficient in terms of readability.</p>
 but we’d still like to read that text as some kind of structured data. This
 is exactly what <strong>textobjects</strong> is for!</p>
 <div class="section" id="template-syntax">
-<h2>Template Syntax<a class="headerlink" href="#template-syntax" title="Permalink to this headline">¶</a></h2>
+<h1>Template Syntax<a class="headerlink" href="#template-syntax" title="Permalink to this headline">¶</a></h1>
 <p><strong>textobjects</strong> uses string templates to create new formats:</p>
 <blockquote>
 <div><dl class="field-list simple">
@@ -262,12 +250,12 @@ a textobject with attributes <cite>inner1</cite> and <cite>inner2</cite></p>
 </dd>
 </dl>
 </div></blockquote>
-</div>
-</div>
 <div class="section" id="examples">
-<span id="id2"></span><h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<span id="id2"></span><h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
 <div class="section" id="basic-usage">
-<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<h1>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h1>
 <p>Suppose we want to pull all of the ‘TODO:’ lines out of our source files</p>
 <p>let’s create a textobject representing a TODO:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">textobjects</span> <span class="kn">import</span> <span class="n">textobject</span>
@@ -309,7 +297,7 @@ This behavior can be changed by setting the <cite>trim_whitespace</cite> variabl
 </div>
 </div>
 <div class="section" id="repeating-patterns">
-<h2>Repeating Patterns<a class="headerlink" href="#repeating-patterns" title="Permalink to this headline">¶</a></h2>
+<h1>Repeating Patterns<a class="headerlink" href="#repeating-patterns" title="Permalink to this headline">¶</a></h1>
 <p>Much of the time there is a repeating pattern in the data. This is
 easy to capture using a textobject. To illustrate this we will make a
 textobject which recognizes JSON</p>
@@ -332,21 +320,6 @@ textobject which recognizes JSON</p>
 <span class="sd">}&quot;&quot;&quot;</span>
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="module-documentation">
-<h1>Module Documentation<a class="headerlink" href="#module-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="the-template-module">
-<h2>The template module<a class="headerlink" href="#the-template-module" title="Permalink to this headline">¶</a></h2>
-</div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
 </div>
 
 
