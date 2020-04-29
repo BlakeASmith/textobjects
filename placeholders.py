@@ -11,7 +11,7 @@ PLACEHOLDER_END = '}'
 
 PLACEHOLDER_PATTERN = re.compile(
         '{(?P<name>\w+)' 
-        '(<(?P<subexpr>.*?(?=>))>)?'
+        '(<(?P<subexpr>.*(?=>))>)?'
         '(?P<wildcards>\D*)'
         '(?P<limit>\d?\d?\d?)}')
 """The pattern used to extract Placeholders from the template"""

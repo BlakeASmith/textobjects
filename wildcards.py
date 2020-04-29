@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from typing import Mapping
 from functools import wraps
 
-
 class Wildcard(ABC):
     """Base class for wildcards. The purpose of this class is to simplify wrapping
     TemplateTransformations and automatically maintain a mapping of the defined wildcards.
@@ -31,7 +30,7 @@ class Wildcard(ABC):
     """A mapping from the Wildcard names to the Wildcard subclasses"""
     types_by_symbol: Mapping[str, 'Wildcard'] = {}
     """A mapping from the Wildcard symbols to the Wildcard subclasses"""
-    default_transformation: TemplateTransformationFactory = None
+    default_transformation = None
     """The template.TemplateTransformation used if no Wildcards are present in the Placeholder"""
 
     def __init_subclass__(cls, symbol, *args, default=False, **kwargs):
@@ -42,15 +41,16 @@ class Wildcard(ABC):
                 def wrap_recurse(text):
                     context, obj = ctx.func(text)
                     eval_func =  create_eval_func(ctx.pattern)
-                    return cls.handle_wildcard(context, obj, create_eval_func)
+                    return cls.handle_wildcard(context, obj, create_eval_func, ctx)
                 return wrap_recurse
             else:
                 @wraps(ctx.func)
                 def wrap_pattern(text):
                     context, obj = ctx.func(text)
-                    def transform(text, pattern=ctx.pattern, ctx=ctx):
-                        return cls.handle_pattern(text, pattern, ctx)
-                    return cls.handle_wildcard(context, obj, transform)
+                    def transform(text, pattern=ctx.pattern, context=context):
+                        return cls.handle_pattern(text, pattern, context)
+                    return cls.handle_wildcard(context, obj, transform, ctx)
+                return wrap_pattern
 
         cls.symbol = symbol
         if cls.__name__ not in Wildcard.types:
@@ -111,10 +111,13 @@ class Wildcard(ABC):
         pass
 
     @classmethod
-    def handle_wildcard(ctx: ExecutionContext, obj: SimpleNamespace, transform: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
-        """Handles storage and forwarding of the data produced from the TemplateTransformation for this wildcard. 
-        By default it stores the return of `transform` as an attribute of `obj` if the ExecutionContext.Placeholder is 
-        definded and has a name
+    def handle_wildcard(cls, ctx: ExecutionContext, obj: SimpleNamespace, 
+            transform: TemplateTransformation, eval_ctx: EvaluationContext):
+        """Handles storage and forwarding of the data produced from 
+        the TemplateTransformation for this wildcard. 
+
+        By default it stores the return of `transform` as an attribute of `obj` if the 
+        ExecutionContext.Placeholder is definded and has a name
 
         .. code:: 
 
@@ -133,27 +136,42 @@ class Wildcard(ABC):
             the updated `obj`
 
         """
-        subctx, subobj = transform(ctx.text)
-        if ctx.placeholder and ctx.placeholder.name:
-            setattr(obj, ctx.placeholder.name, subobj)
+        subctx, subobj = transform(ctx.remaining_text)
+        if eval_ctx.placeholder and eval_ctx.placeholder.name:
+            setattr(obj, eval_ctx.placeholder.name, subobj)
         return (subctx, obj)
 
 class MatchWildcard(Wildcard, symbol='=', default=True):
+
     @classmethod
-    def handle_pattern(text: str, pattern: Pattern, ctx:EvaluationContext):
+    def handle_pattern(cls, text: str, pattern: Pattern, ctx:ExecutionContext):
         match = pattern.match(text)
         if not match:
             raise ValueError(f'{text} does not match {pattern.pattern}')
-        ctx.remaining_text = ctx.remaining_text[match.group(0):]
-        return (ctx, match.group(0))
+        ctx.remaining_text = ctx.remaining_text[match.end(0):]
+        namedgroups = match.groupdict()
 
+        try:
+            result = [match.group(grp) if not isinstance(grp, str) else namedgroups[grp]
+                      for grp in ctx.options.capture_groups]
+        except:
+            result = match.group(0)
+
+        if ctx.options.strip_whitespace:
+            if isinstance(result, list):
+                result = [it.strip() for it in result]
+                if len(result) == 1:
+                    result = result[0]
+            else:
+                result = result.strip()
+        return (ctx, result) 
 class RepeatMatch(Wildcard, symbol='!'):
     @classmethod
     def handle_pattern(pattern: Pattern) -> TemplateTransformation:
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation):
         pass
 
     # if not isinstance(ctx.pattern, list):
@@ -195,7 +213,7 @@ class LooseRepeatMatch(Wildcard, symbol='!!'):
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation):
         pass
     # func, pattern, placeholder = ctx.func, ctx.pattern, ctx.placeholder
     # if not isinstance(pattern, list):
@@ -231,7 +249,7 @@ class OptionalWildcard(Wildcard, symbol='?'):
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation):
         pass
 
 class LooseMatch(Wildcard, symbol='=>'):
@@ -240,7 +258,7 @@ class LooseMatch(Wildcard, symbol='=>'):
         pass
 
     @classmethod
-    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation) -> Tuple[ExecutionContext, Any]:
+    def handle_wildcard(ctx: EvaluationContext, obj, evaluation: TemplateTransformation):
         pass
 
     # def search_pattern(text, func=ctx.func, pattern=ctx.pattern, placeholder=ctx.placeholder):
