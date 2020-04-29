@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Search &mdash; textobjects 0.0.1 documentation</title>
+  <title>template module &mdash; textobjects 0.0.1 documentation</title>
   
 
   
@@ -25,7 +25,6 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/language_data.js"></script>
-        <script src="_static/searchtools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -35,7 +34,9 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tests module" href="tests.html" />
+    <link rel="prev" title="placeholders module" href="placeholders.html" />
     <link href="_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -64,7 +65,7 @@
 
           
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="#" method="get">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -82,13 +83,13 @@
             
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="README.html">Template Syntax</a></li>
 <li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="README.html#repeating-patterns">Repeating Patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">template module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typedef.html">typedef module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wildcards.html">wildcards module</a></li>
@@ -137,12 +138,14 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Search</li>
+      <li>template module</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
+            <a href="_sources/template.rst.txt" rel="nofollow"> View page source</a>
+          
         
       </li>
     
@@ -154,24 +157,78 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <noscript>
-  <div id="fallback" class="admonition warning">
-    <p class="last">
-      Please activate JavaScript to enable the search
-      functionality.
-    </p>
-  </div>
-  </noscript>
+  <div class="section" id="module-template">
+<span id="template-module"></span><h1>template module<a class="headerlink" href="#module-template" title="Permalink to this headline">¶</a></h1>
+<p>Parse template strings to create evaluator functions</p>
+<dl class="class">
+<dt id="template.TemplateEvaluator">
+<em class="property">class </em><code class="sig-prename descclassname">template.</code><code class="sig-name descname">TemplateEvaluator</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#template.TemplateEvaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>interpret placeholder strings to pull data from text</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – <p>options for parsing and evaluating the template.
+all keyword arguments will be passed to the constructor
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">typedef.options</span></code> like this:</p>
+<blockquote>
+<div><p>typedef.Options(<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</p>
+</div></blockquote>
+</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="template.TemplateEvaluator.parse">
+<code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">template: str</em><span class="sig-paren">)</span><a class="headerlink" href="#template.TemplateEvaluator.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>evaluate the Template</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>template</strong> (<em>str</em>) – the template string to parse</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a function to produce an object containing
+attributes for any placeholders in the template</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(Callable[[str], SimpleNamespace])</p>
+</dd>
+</dl>
+</dd></dl>
 
-  
-  <div id="search-results">
-  
-  </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="template.parse_placeholder">
+<code class="sig-prename descclassname">template.</code><code class="sig-name descname">parse_placeholder</code><span class="sig-paren">(</span><em class="sig-param">placeholder: str</em><span class="sig-paren">)</span><a class="headerlink" href="#template.parse_placeholder" title="Permalink to this definition">¶</a></dt>
+<dd><p>extract name, expression, and wildcards from the text of a placeholder</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>placeholder</strong> (<em>str</em>) – the string representing the placeholder</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Placeholder from the string</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference internal" href="placeholders.html#placeholders.Placeholder" title="placeholders.Placeholder">placeholders.Placeholder</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
 
            </div>
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tests.html" class="btn btn-neutral float-right" title="tests module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="placeholders.html" class="btn btn-neutral float-left" title="placeholders module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
@@ -204,14 +261,7 @@
   
   
     
-  
-  <script type="text/javascript">
-    jQuery(function() { Search.loadIndex("searchindex.js"); });
-  </script>
-  
-  <script type="text/javascript" id="searchindexloader"></script>
    
-
 
 </body>
 </html>
