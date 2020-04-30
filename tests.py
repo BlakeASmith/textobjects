@@ -9,7 +9,7 @@ class TestWildcards(TestCase):
 
     def test_multiple_placeholders(self):
         txtobj = TemplateEvaluator(strip_whitespace=True)(
-                '{first} {second} {third}')('first second third ')
+                '{first} {second} {third}')('first second third')
         assert txtobj.first == 'first'
         assert txtobj.second == 'second'
         assert txtobj.third == 'third'
@@ -24,9 +24,15 @@ class TestWildcards(TestCase):
     def test_recursive(self):
         evaluator = TemplateEvaluator()
         fun = evaluator.parse("{outer<foo{inner<~{word}~>}bar>}")
-        obj = fun("foo~   something~bar")
-        print(obj.outer.inner.word)
+        obj = fun("foo~something~bar")
         assert obj.outer.inner.word == 'something'
+
+    def test_search(self):
+        fun = TemplateEvaluator().parse("{something} {outer<{bars<\|+>/} {between<.*>} {lyword<\w*ly>}>}")
+        obj = fun('something something else || other stuf sparcely')
+        print(obj)
+        assert obj.outer.lyword == 'sparcely'
+        assert obj.outer.bars == '||'
 
 
 if __name__ == '__main__':

@@ -1,13 +1,13 @@
 """Parse template strings to create evaluator functions"""
 import re
+import wildcards
 from wildcards import Wildcard
 from placeholders import *
 from typedef import EvaluationContext, ExecutionContext, Options
 from types import SimpleNamespace
 from functools import wraps
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from collections.abc import Iterable
-
 
 def parse_placeholder(placeholder:str):
     """extract name, expression, and wildcards from the text of a placeholder
@@ -23,7 +23,7 @@ def parse_placeholder(placeholder:str):
     return Placeholder(
             name = match['name'], 
             subexpr = match['subexpr'] if match['subexpr'] else DEFAULT_PLACEHOLDER_SUBEXPR,
-            wildcards = Wildcard.parse(match['wildcards']),
+            wildcards = wildcards.parse(match['wildcards']),
             limit = int(match['limit']) if match['limit'] else None)
 
 class TemplateEvaluator:
@@ -88,7 +88,6 @@ class TemplateEvaluator:
 
         return parsedtemplate
 
-
     def parse(self, template: str, rec=False):
         """evaluate the Template
 
@@ -107,13 +106,23 @@ class TemplateEvaluator:
 
         parsedtemplate = self.__parse(template) if not rec else template
         parsedtemplate = self.__adjust_by_future(parsedtemplate) 
+
         for placeholder, pattern in parsedtemplate:
             context = EvaluationContext(func, placeholder, pattern, self)
-            if placeholder:
-                for wildcard in placeholder.wildcards:
-                    func = wildcard(context)
+            if placeholder and placeholder.wildcards:
+                for pre in placeholder.wildcards.preambles():
+                    func = pre(pattern, replace(context, func=func))
+
+                if placeholder.wildcards.transformations():
+                    for transform in placeholder.wildcards.transformations():
+                        func = transform(replace(context, func=func))
+                else:
+                    func = wildcards.match(replace(context, func=func))
+
+                for post in placeholder.wildcards.postambles():
+                    func = post(parsedtemplate, replace(context, func=func))
             else: 
-                func = Wildcard.default_transformation(context)
+                func = wildcards.match(replace(context, func=func))
 
         if rec:
             return func

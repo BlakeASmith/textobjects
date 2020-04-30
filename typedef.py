@@ -46,7 +46,7 @@ TemplatePattern = Union[Pattern, Iterable[Tuple[Optional[Placeholder], Pattern]]
 """Either a parsed template or a re.RegexObject"""
 
 
-@dataclass
+@dataclass(frozen=True)
 class EvaluationContext:
     """The context object which is passed along while defining TemplateTransformations"""
     func: TemplateTransformation
