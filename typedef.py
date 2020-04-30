@@ -1,6 +1,6 @@
 import re
 from placeholders import Placeholder
-from typing import Pattern, Iterable, Union, Callable, Tuple, Optional
+from typing import Pattern, Iterable, Union, Callable, Tuple, Optional, Any
 from types import SimpleNamespace
 from dataclasses import dataclass
 
@@ -55,6 +55,8 @@ class EvaluationContext:
     """The current Placeholder being considered"""
     pattern: TemplatePattern
     """Either the Pattern to be evaluated, or parsed template of the see `template.parse`_"""
+    template: Any
+    """The :obj:`TemplateEvaluator` which is calling the function"""
 
     
 ParsedTemplate = Iterable[Tuple[Optional[Placeholder], TemplatePattern]]

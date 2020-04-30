@@ -9,8 +9,6 @@ from dataclasses import dataclass
 from collections.abc import Iterable
 
 
-# TODO: 
-
 def parse_placeholder(placeholder:str):
     """extract name, expression, and wildcards from the text of a placeholder
     
@@ -68,15 +66,30 @@ class TemplateEvaluator:
                     placeholder = template[start:i+1]
                     parsed = parse_placeholder(placeholder)
                     if PLACEHOLDER_START in parsed.subexpr:
-                        self.__addpattern(parsed.subexpr, results, parsed)
+                        results.append((parsed, self.__parse(parsed.subexpr)))
                     else:
                         self.__addpattern(parsed.subexpr, results, parsed)
                 rstack.append(i+1)
 
-        self.__addpattern(template[rstack.pop():i-1], results)
+        self.__addpattern(template[rstack.pop():], results)
         return results
 
-    def parse(self, template: str):
+    def __adjust_by_future(self, parsedtemplate):
+        for i, (placeholder, pattern) in enumerate(parsedtemplate[:-1]):
+            if isinstance(pattern, list):
+                parsedtemplate[i] = (placeholder, self.__adjust_by_future(pattern))
+            else:
+                if placeholder:
+                    patt = parsedtemplate[i+1][1].pattern
+                    lookahead = f'(?={patt})'
+                    newpatt = re.compile(pattern.pattern+lookahead, *self.options.re_flags)
+                    parsedtemplate[i] = (placeholder, newpatt)
+
+
+        return parsedtemplate
+
+
+    def parse(self, template: str, rec=False):
         """evaluate the Template
 
         Args:
@@ -92,13 +105,18 @@ class TemplateEvaluator:
                     consumed_text='', options=self.options)
             return (ctx, SimpleNamespace())
 
-        for placeholder, pattern in self.__parse(template):
-            context = EvaluationContext(func, placeholder, pattern)
+        parsedtemplate = self.__parse(template) if not rec else template
+        parsedtemplate = self.__adjust_by_future(parsedtemplate) 
+        for placeholder, pattern in parsedtemplate:
+            context = EvaluationContext(func, placeholder, pattern, self)
             if placeholder:
                 for wildcard in placeholder.wildcards:
                     func = wildcard(context)
             else: 
                 func = Wildcard.default_transformation(context)
+
+        if rec:
+            return func
 
         @wraps(func)
         def wrapper(text):

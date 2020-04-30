@@ -40,8 +40,8 @@ class Wildcard(ABC):
                 @wraps(ctx.func)
                 def wrap_recurse(text):
                     context, obj = ctx.func(text)
-                    eval_func =  create_eval_func(ctx.pattern)
-                    return cls.handle_wildcard(context, obj, create_eval_func, ctx)
+                    eval_func =  ctx.template.parse(ctx.pattern, rec=True)
+                    return cls.handle_wildcard(context, obj, eval_func, ctx)
                 return wrap_recurse
             else:
                 @wraps(ctx.func)
@@ -160,10 +160,10 @@ class MatchWildcard(Wildcard, symbol='=', default=True):
         if ctx.options.strip_whitespace:
             if isinstance(result, list):
                 result = [it.strip() for it in result]
-                if len(result) == 1:
-                    result = result[0]
             else:
                 result = result.strip()
+        if len(result) == 1:
+            result = result[0]
         return (ctx, result) 
 class RepeatMatch(Wildcard, symbol='!'):
     @classmethod

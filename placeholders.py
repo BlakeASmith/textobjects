@@ -16,7 +16,7 @@ PLACEHOLDER_PATTERN = re.compile(
         '(?P<limit>\d?\d?\d?)}')
 """The pattern used to extract Placeholders from the template"""
 
-DEFAULT_PLACEHOLDER_SUBEXPR = '\s*\S+?(?=\s|$)'
+DEFAULT_PLACEHOLDER_SUBEXPR = '\s*\S+'
 """The pattern to be substituted when no pattern is specified for the placeholder eg. (**{name}**)"""
 
 @dataclass
