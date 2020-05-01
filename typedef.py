@@ -2,7 +2,16 @@ import re
 from placeholders import Placeholder
 from typing import Pattern, Iterable, Union, Callable, Tuple, Optional, Any
 from types import SimpleNamespace
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+class TemplateMatchError(ValueError):
+    """A ValueError which contains the context of the TemplateEvaluator"""
+    def __init__(self, message, context, obj, **kwargs):
+        super(ValueError, self).__init__(message)
+        self.context = context
+        self.obj = obj
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 @dataclass
 class Options:
@@ -39,6 +48,11 @@ class ExecutionContext:
     options: Options = Options()
     """the options set for the :class:`template.TemplateEvaluator`"""
 
+    alternate_solutions: Iterable = field(default_factory=lambda: [])
+    """any found solutions can be stored here. If there is an 
+    exception raised during the execution one of these solutions
+    will be returned"""
+
 TemplateTransformation = Callable[[str], Tuple[ExecutionContext, SimpleNamespace]]
 """Type definition for the function type which is composed to create an evaluator for a template"""
 
@@ -46,7 +60,7 @@ TemplatePattern = Union[Pattern, Iterable[Tuple[Optional[Placeholder], Pattern]]
 """Either a parsed template or a re.RegexObject"""
 
 
-@dataclass
+@dataclass(frozen=True)
 class EvaluationContext:
     """The context object which is passed along while defining TemplateTransformations"""
     func: TemplateTransformation

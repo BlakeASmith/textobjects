@@ -1,15 +1,16 @@
 """Parse template strings to create evaluator functions"""
 import re
+import wildcards
 from wildcards import Wildcard
 from placeholders import *
-from typedef import EvaluationContext, ExecutionContext, Options
+from typedef import EvaluationContext, ExecutionContext, Options, TemplateMatchError
 from types import SimpleNamespace
+from typing import Pattern
 from functools import wraps
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from collections.abc import Iterable
 
-
-def parse_placeholder(placeholder:str):
+def parse_placeholder(placeholder:str, parent=None):
     """extract name, expression, and wildcards from the text of a placeholder
     
     Args:
@@ -23,8 +24,9 @@ def parse_placeholder(placeholder:str):
     return Placeholder(
             name = match['name'], 
             subexpr = match['subexpr'] if match['subexpr'] else DEFAULT_PLACEHOLDER_SUBEXPR,
-            wildcards = Wildcard.parse(match['wildcards']),
-            limit = int(match['limit']) if match['limit'] else None)
+            wildcards = wildcards.parse(match['wildcards']),
+            limit = int(match['limit']) if match['limit'] else None,
+            parent=parent)
 
 class TemplateEvaluator:
     """interpret placeholder strings to pull data from text
@@ -43,7 +45,7 @@ class TemplateEvaluator:
         if pattern:
             lst.append((placeholder, re.compile(pattern, *self.options.re_flags)))
 
-    def __parse(self, template: str):
+    def __parse(self, template: str, parent=None):
         """produce a list of Patterns associated with the
         appropriate placeholder information
         
@@ -66,7 +68,7 @@ class TemplateEvaluator:
                     placeholder = template[start:i+1]
                     parsed = parse_placeholder(placeholder)
                     if PLACEHOLDER_START in parsed.subexpr:
-                        results.append((parsed, self.__parse(parsed.subexpr)))
+                        results.append((parsed, self.__parse(parsed.subexpr, parsed)))
                     else:
                         self.__addpattern(parsed.subexpr, results, parsed)
                 rstack.append(i+1)
@@ -75,6 +77,14 @@ class TemplateEvaluator:
         return results
 
     def __adjust_by_future(self, parsedtemplate):
+        if not self.options.strict_whitespace:
+            for i, (placeholder, pattern) in enumerate(parsedtemplate):
+                if isinstance(pattern, Pattern):
+                    loosews = re.sub('\s+', re.escape('\s+'), pattern.pattern)
+                    loosews = loosews.replace('\\s\+', '\s+')
+                    pattern = re.compile(loosews, *self.options.re_flags)
+                    parsedtemplate[i] = (placeholder, pattern)
+
         for i, (placeholder, pattern) in enumerate(parsedtemplate[:-1]):
             if isinstance(pattern, list):
                 parsedtemplate[i] = (placeholder, self.__adjust_by_future(pattern))
@@ -85,9 +95,7 @@ class TemplateEvaluator:
                     newpatt = re.compile(pattern.pattern+lookahead, *self.options.re_flags)
                     parsedtemplate[i] = (placeholder, newpatt)
 
-
         return parsedtemplate
-
 
     def parse(self, template: str, rec=False):
         """evaluate the Template
@@ -105,23 +113,43 @@ class TemplateEvaluator:
                     consumed_text='', options=self.options)
             return (ctx, SimpleNamespace())
 
+
         parsedtemplate = self.__parse(template) if not rec else template
-        parsedtemplate = self.__adjust_by_future(parsedtemplate) 
-        for placeholder, pattern in parsedtemplate:
+        if not rec:
+            parsedtemplate = self.__adjust_by_future(parsedtemplate) 
+
+
+        for i, (placeholder, pattern) in enumerate(parsedtemplate):
             context = EvaluationContext(func, placeholder, pattern, self)
-            if placeholder:
-                for wildcard in placeholder.wildcards:
-                    func = wildcard(context)
+            if placeholder and placeholder.wildcards:
+                for pre in placeholder.wildcards.preambles():
+                    func = pre(parsedtemplate, i, replace(context, func=func))
+
+                if placeholder.wildcards.transformations():
+                    for transform in placeholder.wildcards.transformations():
+                        func = transform(replace(context, func=func))
+                else:
+                    func = wildcards.match(replace(context, func=func))
+
+                for post in placeholder.wildcards.postambles():
+                    func = post(parsedtemplate, i, replace(context, func=func))
             else: 
-                func = Wildcard.default_transformation(context)
+                func = wildcards.match(replace(context, func=func))
 
         if rec:
             return func
 
         @wraps(func)
         def wrapper(text):
-            ctx, result = func(text)
-            return result
+            try:
+                ctx, result = func(text)
+                return result
+            except TemplateMatchError as tme:
+                if tme.context.alternate_solutions:
+                    if self.options.all_branches == True:
+                        return tme.context.alternate_solutions
+                    return tme.context.alternate_solutions[0]
+                else: raise tme
         return wrapper
 
     def __call__(self, template: str):
