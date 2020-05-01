@@ -2,7 +2,7 @@
 import re
 from dataclasses import dataclass
 from typing import Iterable
-
+from abc import ABC, abstractproperty, abstractclassmethod
 
 PLACEHOLDER_START = '{'
 """The start symbol for a Placeholder"""
@@ -16,7 +16,7 @@ PLACEHOLDER_PATTERN = re.compile(
         '(?P<limit>\d?\d?\d?)}')
 """The pattern used to extract Placeholders from the template"""
 
-DEFAULT_PLACEHOLDER_SUBEXPR = '\s*\S+'
+DEFAULT_PLACEHOLDER_SUBEXPR = '\S+'
 """The pattern to be substituted when no pattern is specified for the placeholder eg. (**{name}**)"""
 
 @dataclass
@@ -31,4 +31,6 @@ class Placeholder:
     """the wildcards applied to this placeholder """
     limit: int = 0
     """the maximum number of times to apply any of the wildcards"""
+    parent: 'Placeholder' = None
+    """The parent placeholder"""
 
