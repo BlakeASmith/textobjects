@@ -1,24 +1,65 @@
 """Wildcards for template strings"""
 import re
-from typedef import *
+from typedef import TemplateMatchError, EvaluationContext, \
+ExecutionContext, ParsedTemplate, TemplateTransformation
 from abc import ABC, abstractmethod
 from types import SimpleNamespace
-from typing import Mapping, Callable, Literal
+from typing import Mapping, Callable, Literal, Pattern, Match, Tuple
 from functools import wraps
 from collections import UserList
+from dataclasses import dataclass
+import copy
+
 
 wildcards = {}
 
 @dataclass
 class Wildcard:
+    """A wildcard changes the behaviour of template matching.
+    register a wildcard by creating an instance of this class"""
+
     symbol: str
+    """The symbol used in the placeholder to specify this wildcard.
+    It must be unique and contain only non-alphanumeric characters 
+    (`recognized by \W in a regular expression`) """
     action: Callable
+    """A function which wraps the current template matching behaviour. 
+    parameters will very based on the :obj:`Wildcard.kind`"""
+
     kind: Literal['preamble', 'postamble', 'transformation']
+    """The type of wildcard. This specifies which arguments will be provided
+    to :member:`Wildcard.action` as well as the time at which the `action` 
+    function will be called
+
+        preamble: wildcards of this type will be called before processing the 
+            placeholder. see :member:`wildcards.PreambleFunction`. 
+            Use decorator :func:`@preamble(symbol)` to register these
+
+        postamble: similar to :member:`preamble` but called after the processing
+            for the placeholder has been set up. see :member:`wildcards.PostambleFunction`. 
+            Use :func:`@postamble(symbol)` to register these
+
+        transformation: transfomrations do most of the work for matching the template string.
+            transformations are applied to each pattern within the placeholder, including
+            any embedded placeholders. use :func:`@transformation(symbol)` to register these.
+            see :member:`wildcards.TransformationFunction`
+
+        """
 
     def __post_init__(self):
         wildcards[self.symbol] = self
 
+PreambleFunction = Callable[[ParsedTemplate, int, EvaluationContext], TemplateTransformation]
+"""The function type for a preamble"""
+PostambleFunction = Callable[[ParsedTemplate, int, EvaluationContext], TemplateTransformation]
+"""The function type for a postamble"""
+TransformationFunction = Callable[[EvaluationContext], 
+        Callable[[str], Tuple[EvaluationContext, SimpleNamespace]]]
+"""The function type for a transformation"""
+
+
 class Wildcards(UserList):
+    """A collection of wildcards"""
     def preambles(self):
         return [wc.action for wc in self if wc.kind == 'preamble']
     def postambles(self):
@@ -26,33 +67,94 @@ class Wildcards(UserList):
     def transformations(self):
         return [wc.action for wc in self if wc.kind == 'transformation']
 
+def parse(wcstr: str):
+    """extract wildcard symbols from a string
+
+    Args: 
+        wcstr (str): the string containing the wildcard symbols
+
+    Returns:
+        (wildcards.Wildcards) a list of :obj:`wildcards.Wildcard`
+    """
+    wc_regex = "|".join(wildcards).replace('?', '\?')
+    wc_syms = re.findall(wc_regex, wcstr)
+    wcs = [wildcards[sym] for sym in wc_syms]
+    return Wildcards(wcs)
+
 def preamble(symbol):
-    def decorator(func):
+    """register a PreambleFunction to be applied before building the
+    template matching function for a placeholder
+
+    Args: 
+        symbol (str): the symbol which designates the preamble in the placeholder
+
+    Returns:
+        a decorator function which registers the supplied function as a preamble
+    """
+    def decorator(func: PreambleFunction):
         Wildcard(symbol, func, 'preamble')
         return func
     return decorator
         
 def postamble(symbol):
-    def decorator(func):
+    """register a PostambleFunction to be applied after building the
+    template matching function for a placeholder
+
+    Args: 
+        symbol (str): the symbol which designates the postamble in the placeholder
+
+    Returns:
+        a decorator function which registers the supplied function as a postamble
+    """
+    def decorator(func: PostambleFunction):
         Wildcard(symbol, func, 'postamble')
         return func
     return decorator
 
 def store_result(obj, result, placeholder, ctx):
+    """default result storage function for matches. 
+    Simply sets an attribute with the placeholder name on
+    the output object"""
     if placeholder and placeholder.name:
         setattr(obj, placeholder.name, result)
     return (ctx, obj)
 
 def recursive_wrap(ctx, store_func):
+    """default handler for recursion of 
+    transformations. This wraps the current
+    template matching function and recursivley 
+    determines the ParsedTemplate for the placeholders
+    subexpression. The result is stored using the provided
+    `store_func`"""
     @wraps(ctx.func)
     def wrap_recurse(text):
         context, obj = ctx.func(text)
         operation = ctx.template.parse(ctx.pattern, rec=True)
-        subctx, subobj = operation(context.remaining_text)
-        return store_func(obj, subobj, ctx.placeholder, subctx)
+        try:
+            subctx, subobj = operation(context.remaining_text)
+            context.remaining_text = subctx.remaining_text 
+            return store_func(obj, subobj, ctx.placeholder, context)
+        except TemplateMatchError as tme:
+            raise TemplateMatchError(str(tme), context, obj)
     return wrap_recurse
 
 def transformation(symbol, store_func=store_result, recurse_func=recursive_wrap):
+    """register a TransformationFunction to be applied to 
+    each pattern within a placeholder. 
+
+    Args:
+        symbol (str): the symbol to identify the wildcard within the placeholder
+
+        store_func: a function to store the result of the transformation onto the
+            output object. It must have the same signature and return type as 
+            :func:`wildcards.store_result`
+
+        recurse_func: a function to handle the recursive element of the transformation
+            (transformations of other placeholders within the placeholder). it should
+            delegate to :func:`EvaluationContext.template.parse(ParsedTemplate, rec=True)`.
+            It must also match the signature and return types of :func:`wildcards.recursive_wrap`
+
+    """
     def decorator(func):
         @wraps(func)
         def evaluate(ctx: EvaluationContext):
@@ -62,16 +164,17 @@ def transformation(symbol, store_func=store_result, recurse_func=recursive_wrap)
                 @wraps(ctx.func)
                 def wrap_pattern(text):
                     context, obj = ctx.func(text)
-                    subcontext, result = func(context.remaining_text, ctx.pattern, context)
+                    subcontext, result = func(context.remaining_text, ctx.pattern, context, obj)
                     return store_func(obj, result, ctx.placeholder, subcontext)
                 return wrap_pattern
         Wildcard(symbol, evaluate, 'transformation')
         return evaluate
     return decorator
 
-def __apply_options_with_match(match, pattern, text, ctx):
+def __apply_options_with_match(match, pattern, text, ctx, obj):
+    """apply options to the match and :obj:`typedef.EvaluationContext` accordingly"""
     if not match:
-        raise ValueError(f'{text} does not match {pattern.pattern}')
+        raise TemplateMatchError(f'{text} does not match {pattern.pattern}', ctx, obj)
     ctx.remaining_text = text[match.end(0):]
     namedgroups = match.groupdict()
 
@@ -91,6 +194,7 @@ def __apply_options_with_match(match, pattern, text, ctx):
     return (ctx, result) 
 
 def __search_recurse(ctx, store_func):
+    """recursion handler for the :func:`search` transformation"""
     @wraps(ctx.func)
     def wrap_recurse(text):
         context, obj = ctx.func(text)
@@ -107,21 +211,38 @@ def __search_recurse(ctx, store_func):
     return wrap_recurse
 
 @transformation('/', recurse_func=__search_recurse)
-def search(text, pattern, ctx):
+def search(text, pattern, ctx, obj):
+    """Search for the placeholder expression in the text"""
     match = pattern.search(text)
-    return __apply_options_with_match(match, pattern, text, ctx)
-
-
+    return __apply_options_with_match(match, pattern, text, ctx, obj)
 
 @transformation('=')
-def match(text: str, pattern: Pattern, ctx:ExecutionContext):
+def match(text: str, pattern: Pattern, ctx:ExecutionContext, obj):
+    """match the pattern in the text"""
     match = pattern.match(text)
-    return __apply_options_with_match(match, pattern, text, ctx)
+    return __apply_options_with_match(match, pattern, text, ctx, obj)
 
-def parse(wcstr: str):
-    wc_regex = "|".join(wildcards).replace('?', '\?')
-    wc_syms = re.findall(wc_regex, wcstr)
-    wcs = [wildcards[sym] for sym in wc_syms]
-    return Wildcards(wcs)
+
+@preamble('?')
+def optional(parsedtemplate, index, ctx):
+    """Optional placeholders will be captured if they are found and 
+    the remainder of the template string matches. Otherwise they are ignored.
+    The template string will be evaluated twice, once without the placeholder and
+    once with the placeholder. If it fails to match with the placeholder then the 
+    result will eventually be selected as the match without the placeholder.
+    """
+    @wraps(ctx.func)
+    def split(text, parsedtemplate=parsedtemplate):
+        context, obj = ctx.func(text)
+        try:
+            altcontext, result = ctx.template.parse(
+                    parsedtemplate[index+1:], rec=True)(context.remaining_text)
+            setattr(result, ctx.placeholder.name, None)
+            context.alternate_solutions.append(result)
+        except TemplateMatchError as tme:
+            pass
+        return (context, obj)
+    return split
+
 
 

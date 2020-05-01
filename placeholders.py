@@ -31,4 +31,6 @@ class Placeholder:
     """the wildcards applied to this placeholder """
     limit: int = 0
     """the maximum number of times to apply any of the wildcards"""
+    parent: 'Placeholder' = None
+    """The parent placeholder"""
 
