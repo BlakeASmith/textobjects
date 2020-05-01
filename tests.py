@@ -25,8 +25,17 @@ class TestWildcards(TestCase):
         evaluator = TemplateEvaluator()
         fun = evaluator.parse("{outer<foo{inner<~{word}~>}bar>}")
         obj = fun("foo~   something~bar")
-        print(obj.outer.inner.word)
         assert obj.outer.inner.word == 'something'
+
+    def test_optional(self):
+        template = TemplateEvaluator().parse('{optional<this is optional {sub1} {sub2}>?} this is required {required}')
+        obj1 = template('this is required something')
+        assert obj1.optional == None
+        assert obj1.required == 'something'
+        obj2 = template('this is optional foo bar this is required something')
+        assert obj2.optional.sub1 == 'foo'
+        assert obj2.optional.sub2 == 'bar'
+        assert obj2.required == 'something'
 
 
 if __name__ == '__main__':
