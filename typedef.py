@@ -30,7 +30,8 @@ class Options:
     value for a placeholder. Default is the entire match"""
     re_flags: Iterable[int] = (re.MULTILINE,)
     """flags given to `re.compile`"""
-
+    all_matches: bool = False
+    """return all possible matches to the placeholder"""
 
 @dataclass
 class ExecutionContext:

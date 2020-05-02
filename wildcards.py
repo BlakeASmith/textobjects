@@ -191,6 +191,7 @@ def __apply_options_with_match(match, pattern, text, ctx, obj):
             result = result.strip()
     if len(result) == 1:
         result = result[0]
+
     return (ctx, result) 
 
 def __search_recurse(ctx, store_func):
@@ -222,6 +223,27 @@ def match(text: str, pattern: Pattern, ctx:ExecutionContext, obj):
     match = pattern.match(text)
     return __apply_options_with_match(match, pattern, text, ctx, obj)
 
+@transformation('!')
+def repeatmatch(text, pattern, ctx, obj):
+    all_results = []
+    while True:
+        match = pattern.match(ctx.remaining_text)
+        if not match:
+            break
+        ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
+        all_results.append(results)
+    return (ctx, all_results)
+
+@transformation('~!')
+def repeatsearch(text, pattern, ctx, obj):
+    matches = []
+    while True:
+        match = pattern.search(ctx.remaining_text)
+        if not match:
+            break
+        ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
+        matches.append(results)
+    return (ctx, matches)
 
 @preamble('?')
 def optional(parsedtemplate, index, ctx):
@@ -235,10 +257,14 @@ def optional(parsedtemplate, index, ctx):
     def split(text, parsedtemplate=parsedtemplate):
         context, obj = ctx.func(text)
         try:
-            altcontext, result = ctx.template.parse(
-                    parsedtemplate[index+1:], rec=True)(context.remaining_text)
-            setattr(result, ctx.placeholder.name, None)
-            context.alternate_solutions.append(result)
+            matches = ctx.template.parse(parsedtemplate[:index] 
+                    + parsedtemplate[index+2:])(context.remaining_text)
+            if not isinstance(matches, list):
+                matches = [matches]
+            for match in matches:
+                if not hasattr(match, ctx.placeholder.name):
+                    setattr(match, ctx.placeholder.name, None)
+                    context.alternate_solutions.append(match)
         except TemplateMatchError as tme:
             pass
         return (context, obj)

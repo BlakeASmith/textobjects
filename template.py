@@ -91,9 +91,10 @@ class TemplateEvaluator:
             else:
                 if placeholder:
                     patt = parsedtemplate[i+1][1].pattern
-                    lookahead = f'(?={patt})'
-                    newpatt = re.compile(pattern.pattern+lookahead, *self.options.re_flags)
-                    parsedtemplate[i] = (placeholder, newpatt)
+                    if not re.search('\(\?=.*\)$', pattern.pattern, re.M):
+                        lookahead = f'(?={patt})'
+                        newpatt = re.compile(pattern.pattern+lookahead, *self.options.re_flags)
+                        parsedtemplate[i] = (placeholder, newpatt)
 
         return parsedtemplate
 
@@ -114,10 +115,8 @@ class TemplateEvaluator:
             return (ctx, SimpleNamespace())
 
 
-        parsedtemplate = self.__parse(template) if not rec else template
-        if not rec:
-            parsedtemplate = self.__adjust_by_future(parsedtemplate) 
-
+        parsedtemplate = self.__parse(template) if not isinstance(template, list) else template
+        parsedtemplate = self.__adjust_by_future(parsedtemplate) 
 
         for i, (placeholder, pattern) in enumerate(parsedtemplate):
             context = EvaluationContext(func, placeholder, pattern, self)
@@ -125,16 +124,23 @@ class TemplateEvaluator:
                 for pre in placeholder.wildcards.preambles():
                     func = pre(parsedtemplate, i, replace(context, func=func))
 
+        for i, (placeholder, pattern) in enumerate(parsedtemplate):
+            context = EvaluationContext(func, placeholder, pattern, self)
+            if placeholder and placeholder.wildcards:
+
                 if placeholder.wildcards.transformations():
                     for transform in placeholder.wildcards.transformations():
                         func = transform(replace(context, func=func))
                 else:
                     func = wildcards.match(replace(context, func=func))
-
-                for post in placeholder.wildcards.postambles():
-                    func = post(parsedtemplate, i, replace(context, func=func))
             else: 
                 func = wildcards.match(replace(context, func=func))
+
+        for i, (placeholder, pattern) in enumerate(parsedtemplate):
+            context = EvaluationContext(func, placeholder, pattern, self)
+            if placeholder and placeholder.wildcards:
+                for post in placeholder.wildcards.postambles():
+                    func = post(parsedtemplate, i, replace(context, func=func))
 
         if rec:
             return func
@@ -143,12 +149,16 @@ class TemplateEvaluator:
         def wrapper(text):
             try:
                 ctx, result = func(text)
-                return result
+                if self.options.all_matches:
+                    return [result] + ctx.alternate_solutions
+                else:
+                    return result
             except TemplateMatchError as tme:
                 if tme.context.alternate_solutions:
-                    if self.options.all_branches == True:
+                    if self.options.all_matches:
                         return tme.context.alternate_solutions
-                    return tme.context.alternate_solutions[0]
+                    else:
+                        return tme.context.alternate_solutions[0]
                 else: raise tme
         return wrapper
 
