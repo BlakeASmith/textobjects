@@ -12,6 +12,8 @@ Other times the data format is out of our control
 but we'd still like to read that text as structured data. This
 is exactly what **textobjects** is for!
 
+you can see the full docs here https://blakeasmith.github.io/textobjects/
+
 Template Syntax
 _____________________________________
 
