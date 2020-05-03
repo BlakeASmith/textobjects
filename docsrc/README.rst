@@ -28,7 +28,7 @@ _____________________________________
 
         .. code-block:: python
                 
-                {varname<regex>} # `varname` is the name for the capture attribute
+                "{varname<regex>}" # `varname` is the name for the capture attribute
                                  # `regex` is a regular expression to match
 
         :Inline Regular Expressions: you can put any regular expression in the template string
@@ -37,7 +37,7 @@ _____________________________________
 
         .. code-block:: python
                 
-                ^{name<[a-z]>}$ # matches a single lowercase word on it's own line
+                "^{name<[a-z]>}$" # matches a single lowercase word on it's own line
 
 
         :Wildcards: any symbols placed between the **<regex>** tag and the placeholder identifier are interpreted 
@@ -46,8 +46,8 @@ _____________________________________
 
         .. code-block:: python
 
-                {varname<regex>/?} # here `/` and `?` are wildcards
-                {varname/?} # this is also valid 
+                "{varname<regex>/?}" # here `/` and `?` are wildcards
+                "{varname/?}" # this is also valid 
 
 Wildcards
 ________________________________________
@@ -65,7 +65,7 @@ ________________________________________
                                
                 .. code-block:: python
 
-                        {varname<regex>!n}
+                        "{varname<regex>!n}"
 
                 * the repeat syntax also works with regular placeholders **{varname!n}**... 
 
@@ -76,7 +76,7 @@ ________________________________________
 
                 .. code-block:: python
                         
-                        {placeholder<{inner1} {inner2}>}
+                        "{placeholder<{inner1} {inner2}>}"
 
                 the resulting object will have an attribute called `placeholder` which is a an
                 object with attributes `inner1` and `inner2`
