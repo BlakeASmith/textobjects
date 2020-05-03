@@ -84,12 +84,13 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="README.html">Template Syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="README.html#wildcards">Wildcards</a></li>
 <li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#repeating-patterns">Repeating Patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="textobjects.html">textobjects module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typedef.html">typedef module</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">wildcards module</a></li>
 </ul>
@@ -159,479 +160,205 @@
   <div class="section" id="module-wildcards">
 <span id="wildcards-module"></span><h1>wildcards module<a class="headerlink" href="#module-wildcards" title="Permalink to this headline">¶</a></h1>
 <p>Wildcards for template strings</p>
-<dl class="class">
-<dt id="wildcards.LooseMatch">
-<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">LooseMatch</code><a class="headerlink" href="#wildcards.LooseMatch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#wildcards.Wildcard" title="wildcards.Wildcard"><code class="xref py py-class docutils literal notranslate"><span class="pre">wildcards.Wildcard</span></code></a></p>
-<dl class="method">
-<dt id="wildcards.LooseMatch.handle_pattern">
-<em class="property">classmethod </em><code class="sig-name descname">handle_pattern</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]<a class="headerlink" href="#wildcards.LooseMatch.handle_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method handles the case that the subexpression for a placeholder is
-just a python regular expression. The method should produce a TemplateTransformation
-using the pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pattern</strong> (<em>re.RegexObject</em>) – The compiled pattern replating to the current placeholder</p></li>
-<li><p><strong>ctx</strong> (<em>template.ExecutionContext</em>) – The execution context for the transformation</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>a TemplateTransformation to be applied. The storage of the
-result will be handled in <cite>Wildcard.handle_pattern</cite> Here’s an example
-which just matches the text against the regex and returns the matched text to be stored</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">handle_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> does not match </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">transform</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(TemplateTransformation)</p>
-</dd>
-</dl>
+<dl class="data">
+<dt id="wildcards.PostambleFunction">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">PostambleFunction</code><em class="property"> = typing.Callable[[typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Pattern]]]]], int, typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[typedef.ExecutionContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.PostambleFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function type for a postamble</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="wildcards.LooseMatch.handle_wildcard">
-<em class="property">classmethod </em><code class="sig-name descname">handle_wildcard</code><span class="sig-paren">(</span><em class="sig-param">obj, evaluation: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.LooseMatch.handle_wildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handles storage and forwarding of the data produced from
-the TemplateTransformation for this wildcard.</p>
-<p>By default it stores the return of <cite>transform</cite> as an attribute of <cite>obj</cite> if the
-ExecutionContext.Placeholder is definded and has a name</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">subctx</span><span class="p">,</span> <span class="n">subobj</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span> <span class="ow">and</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">subobj</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">subctx</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ctx</strong> (<em>ExecutionContext</em>) – the execution context</p></li>
-<li><p><strong>obj</strong> (<em>SimpleNamespace</em>) – the namespace in which placeholder results can be stored</p></li>
-<li><p><strong>transform</strong> (<em>template.TemplateTransformation</em>) – The transformation which is to be applied</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a tuple containing the updated execution context and
-the updated <cite>obj</cite></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(Tuple[ExecutionContext, SimpleNamespace])</p>
-</dd>
-</dl>
+<dl class="data">
+<dt id="wildcards.PreambleFunction">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">PreambleFunction</code><em class="property"> = typing.Callable[[typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Pattern]]]]], int, typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[typedef.ExecutionContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.PreambleFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function type for a preamble</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="wildcards.LooseMatch.symbol">
-<code class="sig-name descname">symbol</code><em class="property"> = '=&gt;'</em><a class="headerlink" href="#wildcards.LooseMatch.symbol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="wildcards.LooseRepeatMatch">
-<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">LooseRepeatMatch</code><a class="headerlink" href="#wildcards.LooseRepeatMatch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#wildcards.Wildcard" title="wildcards.Wildcard"><code class="xref py py-class docutils literal notranslate"><span class="pre">wildcards.Wildcard</span></code></a></p>
-<dl class="method">
-<dt id="wildcards.LooseRepeatMatch.handle_pattern">
-<em class="property">classmethod </em><code class="sig-name descname">handle_pattern</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]<a class="headerlink" href="#wildcards.LooseRepeatMatch.handle_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method handles the case that the subexpression for a placeholder is
-just a python regular expression. The method should produce a TemplateTransformation
-using the pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pattern</strong> (<em>re.RegexObject</em>) – The compiled pattern replating to the current placeholder</p></li>
-<li><p><strong>ctx</strong> (<em>template.ExecutionContext</em>) – The execution context for the transformation</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>a TemplateTransformation to be applied. The storage of the
-result will be handled in <cite>Wildcard.handle_pattern</cite> Here’s an example
-which just matches the text against the regex and returns the matched text to be stored</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">handle_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> does not match </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">transform</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(TemplateTransformation)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="wildcards.LooseRepeatMatch.handle_wildcard">
-<em class="property">classmethod </em><code class="sig-name descname">handle_wildcard</code><span class="sig-paren">(</span><em class="sig-param">obj, evaluation: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.LooseRepeatMatch.handle_wildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handles storage and forwarding of the data produced from
-the TemplateTransformation for this wildcard.</p>
-<p>By default it stores the return of <cite>transform</cite> as an attribute of <cite>obj</cite> if the
-ExecutionContext.Placeholder is definded and has a name</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">subctx</span><span class="p">,</span> <span class="n">subobj</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span> <span class="ow">and</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">subobj</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">subctx</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ctx</strong> (<em>ExecutionContext</em>) – the execution context</p></li>
-<li><p><strong>obj</strong> (<em>SimpleNamespace</em>) – the namespace in which placeholder results can be stored</p></li>
-<li><p><strong>transform</strong> (<em>template.TemplateTransformation</em>) – The transformation which is to be applied</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a tuple containing the updated execution context and
-the updated <cite>obj</cite></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(Tuple[ExecutionContext, SimpleNamespace])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="wildcards.LooseRepeatMatch.symbol">
-<code class="sig-name descname">symbol</code><em class="property"> = '!!'</em><a class="headerlink" href="#wildcards.LooseRepeatMatch.symbol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="wildcards.MatchWildcard">
-<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">MatchWildcard</code><a class="headerlink" href="#wildcards.MatchWildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#wildcards.Wildcard" title="wildcards.Wildcard"><code class="xref py py-class docutils literal notranslate"><span class="pre">wildcards.Wildcard</span></code></a></p>
-<dl class="method">
-<dt id="wildcards.MatchWildcard.handle_pattern">
-<em class="property">classmethod </em><code class="sig-name descname">handle_pattern</code><span class="sig-paren">(</span><em class="sig-param">text: str</em>, <em class="sig-param">pattern: Pattern</em>, <em class="sig-param">ctx: typedef.ExecutionContext</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.MatchWildcard.handle_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method handles the case that the subexpression for a placeholder is
-just a python regular expression. The method should produce a TemplateTransformation
-using the pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pattern</strong> (<em>re.RegexObject</em>) – The compiled pattern replating to the current placeholder</p></li>
-<li><p><strong>ctx</strong> (<em>template.ExecutionContext</em>) – The execution context for the transformation</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>a TemplateTransformation to be applied. The storage of the
-result will be handled in <cite>Wildcard.handle_pattern</cite> Here’s an example
-which just matches the text against the regex and returns the matched text to be stored</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">handle_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> does not match </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">transform</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(TemplateTransformation)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="wildcards.MatchWildcard.symbol">
-<code class="sig-name descname">symbol</code><em class="property"> = '='</em><a class="headerlink" href="#wildcards.MatchWildcard.symbol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="wildcards.OptionalWildcard">
-<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">OptionalWildcard</code><a class="headerlink" href="#wildcards.OptionalWildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#wildcards.Wildcard" title="wildcards.Wildcard"><code class="xref py py-class docutils literal notranslate"><span class="pre">wildcards.Wildcard</span></code></a></p>
-<dl class="method">
-<dt id="wildcards.OptionalWildcard.handle_pattern">
-<em class="property">classmethod </em><code class="sig-name descname">handle_pattern</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]<a class="headerlink" href="#wildcards.OptionalWildcard.handle_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method handles the case that the subexpression for a placeholder is
-just a python regular expression. The method should produce a TemplateTransformation
-using the pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pattern</strong> (<em>re.RegexObject</em>) – The compiled pattern replating to the current placeholder</p></li>
-<li><p><strong>ctx</strong> (<em>template.ExecutionContext</em>) – The execution context for the transformation</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>a TemplateTransformation to be applied. The storage of the
-result will be handled in <cite>Wildcard.handle_pattern</cite> Here’s an example
-which just matches the text against the regex and returns the matched text to be stored</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">handle_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> does not match </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">transform</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(TemplateTransformation)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="wildcards.OptionalWildcard.handle_wildcard">
-<em class="property">classmethod </em><code class="sig-name descname">handle_wildcard</code><span class="sig-paren">(</span><em class="sig-param">obj, evaluation: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.OptionalWildcard.handle_wildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handles storage and forwarding of the data produced from
-the TemplateTransformation for this wildcard.</p>
-<p>By default it stores the return of <cite>transform</cite> as an attribute of <cite>obj</cite> if the
-ExecutionContext.Placeholder is definded and has a name</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">subctx</span><span class="p">,</span> <span class="n">subobj</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span> <span class="ow">and</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">subobj</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">subctx</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ctx</strong> (<em>ExecutionContext</em>) – the execution context</p></li>
-<li><p><strong>obj</strong> (<em>SimpleNamespace</em>) – the namespace in which placeholder results can be stored</p></li>
-<li><p><strong>transform</strong> (<em>template.TemplateTransformation</em>) – The transformation which is to be applied</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a tuple containing the updated execution context and
-the updated <cite>obj</cite></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(Tuple[ExecutionContext, SimpleNamespace])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="wildcards.OptionalWildcard.symbol">
-<code class="sig-name descname">symbol</code><em class="property"> = '?'</em><a class="headerlink" href="#wildcards.OptionalWildcard.symbol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="wildcards.RepeatMatch">
-<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">RepeatMatch</code><a class="headerlink" href="#wildcards.RepeatMatch" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#wildcards.Wildcard" title="wildcards.Wildcard"><code class="xref py py-class docutils literal notranslate"><span class="pre">wildcards.Wildcard</span></code></a></p>
-<dl class="method">
-<dt id="wildcards.RepeatMatch.handle_pattern">
-<em class="property">classmethod </em><code class="sig-name descname">handle_pattern</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]<a class="headerlink" href="#wildcards.RepeatMatch.handle_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method handles the case that the subexpression for a placeholder is
-just a python regular expression. The method should produce a TemplateTransformation
-using the pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pattern</strong> (<em>re.RegexObject</em>) – The compiled pattern replating to the current placeholder</p></li>
-<li><p><strong>ctx</strong> (<em>template.ExecutionContext</em>) – The execution context for the transformation</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>a TemplateTransformation to be applied. The storage of the
-result will be handled in <cite>Wildcard.handle_pattern</cite> Here’s an example
-which just matches the text against the regex and returns the matched text to be stored</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">handle_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> does not match </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">transform</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(TemplateTransformation)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="wildcards.RepeatMatch.handle_wildcard">
-<em class="property">classmethod </em><code class="sig-name descname">handle_wildcard</code><span class="sig-paren">(</span><em class="sig-param">obj, evaluation: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.RepeatMatch.handle_wildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handles storage and forwarding of the data produced from
-the TemplateTransformation for this wildcard.</p>
-<p>By default it stores the return of <cite>transform</cite> as an attribute of <cite>obj</cite> if the
-ExecutionContext.Placeholder is definded and has a name</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">subctx</span><span class="p">,</span> <span class="n">subobj</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span> <span class="ow">and</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">subobj</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">subctx</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ctx</strong> (<em>ExecutionContext</em>) – the execution context</p></li>
-<li><p><strong>obj</strong> (<em>SimpleNamespace</em>) – the namespace in which placeholder results can be stored</p></li>
-<li><p><strong>transform</strong> (<em>template.TemplateTransformation</em>) – The transformation which is to be applied</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a tuple containing the updated execution context and
-the updated <cite>obj</cite></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(Tuple[ExecutionContext, SimpleNamespace])</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="wildcards.RepeatMatch.symbol">
-<code class="sig-name descname">symbol</code><em class="property"> = '!'</em><a class="headerlink" href="#wildcards.RepeatMatch.symbol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<dl class="data">
+<dt id="wildcards.TransformationFunction">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">TransformationFunction</code><em class="property"> = typing.Callable[[typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[typedef.EvaluationContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.TransformationFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function type for a transformation</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="wildcards.Wildcard">
-<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">Wildcard</code><a class="headerlink" href="#wildcards.Wildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
-<p>Base class for wildcards. The purpose of this class is to simplify wrapping
-TemplateTransformations and automatically maintain a mapping of the defined wildcards.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>symbol</strong> (<em>str</em>) – The symbol which will specify the wildcard in the Placeholder string</p></li>
-<li><p><strong>default</strong> (<em>boolean</em>) – Sets the subclass as the default wildcard.
-When no wildcards are given in a Placeholder the transformation for this wildcard will be applied</p></li>
-</ul>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Subclasses of wildcard are not instantiable. The __init__() method of any
-subclass is replaced by</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Wildcard classes cannot be instantiated&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<dl class="method">
-<dt id="wildcards.Wildcard.default_transformation">
-<code class="sig-name descname">default_transformation</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]]<a class="headerlink" href="#wildcards.Wildcard.default_transformation" title="Permalink to this definition">¶</a></dt>
-<dd><p>The template.TemplateTransformation used if no Wildcards are present in the Placeholder</p>
+<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">Wildcard</code><span class="sig-paren">(</span><em class="sig-param">symbol: str, action: Callable, kind: Literal[preamble, postamble, transformation]</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A wildcard changes the behaviour of template matching.
+register a wildcard by creating an instance of this class</p>
+<dl class="attribute">
+<dt id="wildcards.Wildcard.action">
+<code class="sig-name descname">action</code><em class="property">: Callable</em><em class="property"> = None</em><a class="headerlink" href="#wildcards.Wildcard.action" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function which wraps the current template matching behaviour.
+parameters will very based on the <a class="reference internal" href="#wildcards.Wildcard.kind" title="wildcards.Wildcard.kind"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wildcard.kind</span></code></a></p>
 </dd></dl>
 
-<dl class="method">
-<dt id="wildcards.Wildcard.handle_pattern">
-<em class="property">abstract classmethod </em><code class="sig-name descname">handle_pattern</code><span class="sig-paren">(</span><em class="sig-param">text: str</em>, <em class="sig-param">pattern: Pattern</em>, <em class="sig-param">ctx: typedef.ExecutionContext</em><span class="sig-paren">)</span> &#x2192; Tuple[typedef.ExecutionContext, types.SimpleNamespace]<a class="headerlink" href="#wildcards.Wildcard.handle_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method handles the case that the subexpression for a placeholder is
-just a python regular expression. The method should produce a TemplateTransformation
-using the pattern</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pattern</strong> (<em>re.RegexObject</em>) – The compiled pattern replating to the current placeholder</p></li>
-<li><p><strong>ctx</strong> (<em>template.ExecutionContext</em>) – The execution context for the transformation</p></li>
-</ul>
+<dl class="attribute">
+<dt id="wildcards.Wildcard.kind">
+<code class="sig-name descname">kind</code><em class="property">: Literal['preamble', 'postamble', 'transformation']</em><em class="property"> = None</em><a class="headerlink" href="#wildcards.Wildcard.kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of wildcard. This specifies which arguments will be provided
+to <a class="reference internal" href="#wildcards.Wildcard.action" title="wildcards.Wildcard.action"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wildcard.action</span></code></a> as well as the time at which the <cite>action</cite>
+function will be called</p>
+<blockquote>
+<div><dl class="simple">
+<dt>preamble: wildcards of this type will be called before processing the</dt><dd><p>placeholder. see <a class="reference internal" href="#wildcards.PreambleFunction" title="wildcards.PreambleFunction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wildcards.PreambleFunction</span></code></a>.
+Use decorator <code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;preamble(symbol)()</span></code> to register these</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p>a TemplateTransformation to be applied. The storage of the
-result will be handled in <cite>Wildcard.handle_pattern</cite> Here’s an example
-which just matches the text against the regex and returns the matched text to be stored</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">handle_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s1"> does not match </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="mi">0</span><span class="p">):]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">transform</span>
-</pre></div>
-</div>
-</p>
+<dt>postamble: similar to <a class="reference internal" href="#wildcards.preamble" title="wildcards.preamble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preamble</span></code></a> but called after the processing</dt><dd><p>for the placeholder has been set up. see <a class="reference internal" href="#wildcards.PostambleFunction" title="wildcards.PostambleFunction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wildcards.PostambleFunction</span></code></a>.
+Use <code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;postamble(symbol)()</span></code> to register these</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(TemplateTransformation)</p>
+<dt>transformation: transfomrations do most of the work for matching the template string.</dt><dd><p>transformations are applied to each pattern within the placeholder, including
+any embedded placeholders. use <code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;transformation(symbol)()</span></code> to register these.
+see <a class="reference internal" href="#wildcards.TransformationFunction" title="wildcards.TransformationFunction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wildcards.TransformationFunction</span></code></a></p>
 </dd>
 </dl>
+</div></blockquote>
 </dd></dl>
 
-<dl class="method">
-<dt id="wildcards.Wildcard.handle_wildcard">
-<em class="property">classmethod </em><code class="sig-name descname">handle_wildcard</code><span class="sig-paren">(</span><em class="sig-param">ctx: typedef.ExecutionContext, obj: types.SimpleNamespace, transform: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]], eval_ctx: typedef.EvaluationContext</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcard.handle_wildcard" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handles storage and forwarding of the data produced from
-the TemplateTransformation for this wildcard.</p>
-<p>By default it stores the return of <cite>transform</cite> as an attribute of <cite>obj</cite> if the
-ExecutionContext.Placeholder is definded and has a name</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">subctx</span><span class="p">,</span> <span class="n">subobj</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">remaining_text</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span> <span class="ow">and</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">placeholder</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">subobj</span><span class="p">)</span>
-<span class="k">return</span> <span class="p">(</span><span class="n">subctx</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ctx</strong> (<em>ExecutionContext</em>) – the execution context</p></li>
-<li><p><strong>obj</strong> (<em>SimpleNamespace</em>) – the namespace in which placeholder results can be stored</p></li>
-<li><p><strong>transform</strong> (<em>template.TemplateTransformation</em>) – The transformation which is to be applied</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>a tuple containing the updated execution context and
-the updated <cite>obj</cite></p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(Tuple[ExecutionContext, SimpleNamespace])</p>
-</dd>
-</dl>
+<dl class="attribute">
+<dt id="wildcards.Wildcard.symbol">
+<code class="sig-name descname">symbol</code><em class="property">: str</em><em class="property"> = None</em><a class="headerlink" href="#wildcards.Wildcard.symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>The symbol used in the placeholder to specify this wildcard.
+It must be unique and contain only non-alphanumeric characters
+(<cite>recognized by W in a regular expression</cite>)</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="class">
+<dt id="wildcards.Wildcards">
+<em class="property">class </em><code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">Wildcards</code><span class="sig-paren">(</span><em class="sig-param">initlist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcards" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.UserList</span></code></p>
+<p>A collection of wildcards</p>
 <dl class="method">
-<dt id="wildcards.Wildcard.parse">
-<em class="property">classmethod </em><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">wildcards: str</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcard.parse" title="Permalink to this definition">¶</a></dt>
+<dt id="wildcards.Wildcards.postambles">
+<code class="sig-name descname">postambles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcards.postambles" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
-<dt id="wildcards.Wildcard.types">
-<code class="sig-name descname">types</code><em class="property">: Mapping[str, Wildcard]</em><em class="property"> = {'LooseMatch': &lt;class 'wildcards.LooseMatch'&gt;, 'LooseRepeatMatch': &lt;class 'wildcards.LooseRepeatMatch'&gt;, 'MatchWildcard': &lt;class 'wildcards.MatchWildcard'&gt;, 'OptionalWildcard': &lt;class 'wildcards.OptionalWildcard'&gt;, 'RepeatMatch': &lt;class 'wildcards.RepeatMatch'&gt;}</em><a class="headerlink" href="#wildcards.Wildcard.types" title="Permalink to this definition">¶</a></dt>
-<dd><p>A mapping from the Wildcard names to the Wildcard subclasses</p>
+<dl class="method">
+<dt id="wildcards.Wildcards.preambles">
+<code class="sig-name descname">preambles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcards.preambles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wildcards.Wildcards.transformations">
+<code class="sig-name descname">transformations</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.Wildcards.transformations" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
-<dl class="attribute">
-<dt id="wildcards.Wildcard.types_by_symbol">
-<code class="sig-name descname">types_by_symbol</code><em class="property">: Mapping[str, Wildcard]</em><em class="property"> = {'!': &lt;class 'wildcards.RepeatMatch'&gt;, '!!': &lt;class 'wildcards.LooseRepeatMatch'&gt;, '=': &lt;class 'wildcards.MatchWildcard'&gt;, '=&gt;': &lt;class 'wildcards.LooseMatch'&gt;, '?': &lt;class 'wildcards.OptionalWildcard'&gt;}</em><a class="headerlink" href="#wildcards.Wildcard.types_by_symbol" title="Permalink to this definition">¶</a></dt>
-<dd><p>A mapping from the Wildcard symbols to the Wildcard subclasses</p>
+<dl class="function">
+<dt id="wildcards.match">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">match</code><span class="sig-paren">(</span><em class="sig-param">text: str</em>, <em class="sig-param">pattern: Pattern</em>, <em class="sig-param">ctx: typedef.ExecutionContext</em>, <em class="sig-param">obj</em>, <em class="sig-param">evalctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.match" title="Permalink to this definition">¶</a></dt>
+<dd><p>match the pattern in the text</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="wildcards.optional">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">optional</code><span class="sig-paren">(</span><em class="sig-param">parsedtemplate</em>, <em class="sig-param">index</em>, <em class="sig-param">ctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.optional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optional placeholders will be captured if they are found and
+the remainder of the template string matches. Otherwise they are ignored.
+The template string will be evaluated twice, once without the placeholder and
+once with the placeholder. If it fails to match with the placeholder then the
+result will eventually be selected as the match without the placeholder.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.parse">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">wcstr: str</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>extract wildcard symbols from a string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wcstr</strong> (<em>str</em>) – the string containing the wildcard symbols</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(wildcards.Wildcards) a list of <a class="reference internal" href="#wildcards.Wildcard" title="wildcards.Wildcard"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wildcards.Wildcard</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.postamble">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">postamble</code><span class="sig-paren">(</span><em class="sig-param">symbol</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.postamble" title="Permalink to this definition">¶</a></dt>
+<dd><p>register a PostambleFunction to be applied after building the
+template matching function for a placeholder</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>symbol</strong> (<em>str</em>) – the symbol which designates the postamble in the placeholder</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a decorator function which registers the supplied function as a postamble</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.preamble">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">preamble</code><span class="sig-paren">(</span><em class="sig-param">symbol</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.preamble" title="Permalink to this definition">¶</a></dt>
+<dd><p>register a PreambleFunction to be applied before building the
+template matching function for a placeholder</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>symbol</strong> (<em>str</em>) – the symbol which designates the preamble in the placeholder</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a decorator function which registers the supplied function as a preamble</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.recursive_wrap">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">recursive_wrap</code><span class="sig-paren">(</span><em class="sig-param">ctx</em>, <em class="sig-param">store_func</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.recursive_wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>default handler for recursion of
+transformations. This wraps the current
+template matching function and recursivley
+determines the ParsedTemplate for the placeholders
+subexpression. The result is stored using the provided
+<cite>store_func</cite></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.repeatmatch">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">repeatmatch</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">pattern</em>, <em class="sig-param">ctx</em>, <em class="sig-param">obj</em>, <em class="sig-param">evalctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.repeatmatch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="wildcards.repeatsearch">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">repeatsearch</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">pattern</em>, <em class="sig-param">ctx</em>, <em class="sig-param">obj</em>, <em class="sig-param">evalctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.repeatsearch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="wildcards.search">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">search</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">pattern</em>, <em class="sig-param">ctx</em>, <em class="sig-param">obj</em>, <em class="sig-param">evalctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search for the placeholder expression in the text</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.store_result">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">store_result</code><span class="sig-paren">(</span><em class="sig-param">obj</em>, <em class="sig-param">result</em>, <em class="sig-param">placeholder</em>, <em class="sig-param">ctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.store_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>default result storage function for matches.
+Simply sets an attribute with the placeholder name on
+the output object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="wildcards.transformation">
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">transformation</code><span class="sig-paren">(</span><em class="sig-param">symbol</em>, <em class="sig-param">store_func=&lt;function store_result&gt;</em>, <em class="sig-param">recurse_func=&lt;function recursive_wrap&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.transformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>register a TransformationFunction to be applied to
+each pattern within a placeholder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbol</strong> (<em>str</em>) – the symbol to identify the wildcard within the placeholder</p></li>
+<li><p><strong>store_func</strong> – a function to store the result of the transformation onto the
+output object. It must have the same signature and return type as
+<a class="reference internal" href="#wildcards.store_result" title="wildcards.store_result"><code class="xref py py-func docutils literal notranslate"><span class="pre">wildcards.store_result()</span></code></a></p></li>
+<li><p><strong>recurse_func</strong> – a function to handle the recursive element of the transformation
+(transformations of other placeholders within the placeholder). it should
+delegate to <code class="xref py py-func docutils literal notranslate"><span class="pre">EvaluationContext.template.parse(ParsedTemplate,</span> <span class="pre">rec=True)()</span></code>.
+It must also match the signature and return types of <a class="reference internal" href="#wildcards.recursive_wrap" title="wildcards.recursive_wrap"><code class="xref py py-func docutils literal notranslate"><span class="pre">wildcards.recursive_wrap()</span></code></a></p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

@@ -28,21 +28,21 @@ class Wildcard:
 
     kind: Literal['preamble', 'postamble', 'transformation']
     """The type of wildcard. This specifies which arguments will be provided
-    to :member:`Wildcard.action` as well as the time at which the `action` 
+    to :obj:`Wildcard.action` as well as the time at which the `action` 
     function will be called
 
         preamble: wildcards of this type will be called before processing the 
-            placeholder. see :member:`wildcards.PreambleFunction`. 
+            placeholder. see :obj:`wildcards.PreambleFunction`. 
             Use decorator :func:`@preamble(symbol)` to register these
 
-        postamble: similar to :member:`preamble` but called after the processing
-            for the placeholder has been set up. see :member:`wildcards.PostambleFunction`. 
+        postamble: similar to :obj:`preamble` but called after the processing
+            for the placeholder has been set up. see :obj:`wildcards.PostambleFunction`. 
             Use :func:`@postamble(symbol)` to register these
 
         transformation: transfomrations do most of the work for matching the template string.
             transformations are applied to each pattern within the placeholder, including
             any embedded placeholders. use :func:`@transformation(symbol)` to register these.
-            see :member:`wildcards.TransformationFunction`
+            see :obj:`wildcards.TransformationFunction`
 
         """
 

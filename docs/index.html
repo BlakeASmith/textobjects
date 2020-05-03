@@ -84,12 +84,13 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="README.html">Template Syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="README.html#wildcards">Wildcards</a></li>
 <li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#repeating-patterns">Repeating Patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="textobjects.html">textobjects module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typedef.html">typedef module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wildcards.html">wildcards module</a></li>
 </ul>
@@ -161,36 +162,32 @@
 <div class="toctree-wrapper compound">
 </div>
 <hr class="docutils" />
-<p><strong>textobjects</strong> is a python module for reading and encoding plain
-text data in arbitrary formats</p>
+<p><strong>textobjects</strong> is a python module for reading arbitrary
+structured data from text</p>
 <p>Often we want to store some data programmatically, but we also need
 that data to be presented in a human readable way. There are many
-excellent data formats out there such as json or csv, but these may
+formats such as json or csv, but these may
 not always be sufficient in terms of readability.</p>
-<p>Other times the data format is out of our control, such as in a config or log file,
-but we’d still like to read that text as some kind of structured data. This
+<p>Other times the data format is out of our control
+but we’d still like to read that text as structured data. This
 is exactly what <strong>textobjects</strong> is for!</p>
 <div class="section" id="template-syntax">
 <h2>Template Syntax<a class="headerlink" href="#template-syntax" title="Permalink to this headline">¶</a></h2>
-<p><strong>textobjects</strong> uses string templates to create new formats:</p>
+<p><strong>textobjects</strong> uses a template syntax to identify a text object:</p>
 <blockquote>
 <div><dl class="field-list simple">
 <dt class="field-odd">Placeholders</dt>
-<dd class="field-odd"><p>any word surrounded by <strong>{ }</strong> represents a placeholder.
+<dd class="field-odd"><p>any identifier surrounded by <strong>{ }</strong> represents a placeholder.
 adding a placeholder creates an attribute on the textobject
 which will be set to the text which was found in that position.</p>
 </dd>
 </dl>
 <ul class="simple">
-<li><p>matching for placeholders is <em>greedy</em> by default. As much text
-as possible will be matched, you can see how this works in the <a class="reference internal" href="#examples">Examples</a></p></li>
+<li><p>by default a placeholder will match a single whitespace delimited word</p></li>
 <li><p>you can change the matching behavior by including a <strong>&lt;regex&gt;</strong> tag.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">varname</span><span class="o">&lt;</span><span class="n">regex</span><span class="o">&gt;</span><span class="p">}</span> <span class="c1"># `varname` is the capture attribute</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">varname</span><span class="o">&lt;</span><span class="n">regex</span><span class="o">&gt;</span><span class="p">}</span> <span class="c1"># `varname` is the name for the capture attribute</span>
                  <span class="c1"># `regex` is a regular expression to match</span>
-
-<span class="c1"># this roughly translates to the regex:</span>
-<span class="s2">&quot;(?P&lt;varname&gt;regex)&quot;</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -203,65 +200,55 @@ this will affect which strings will match the template, but will not capture any
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>^{name&lt;[a-z]&gt;}$ # matches a single lowercase word on it&#39;s own line
 </pre></div>
 </div>
-<dl class="field-list">
-<dt class="field-odd">Optional Placeholders</dt>
-<dd class="field-odd"><p><strong>{varname&lt;regex&gt;?}</strong> is an <em>optional placeholder</em>. If the regex pattern
-matches the text at that position then the text will be captured in an attribute called
-<cite>varname</cite>. But if it does not match the placeholder will be ignored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Wildcards</dt>
+<dd class="field-odd"><p>any symbols placed between the <strong>&lt;regex&gt;</strong> tag and the placeholder identifier are interpreted
+as <strong>Wildcards</strong> which change the matching behavior</p>
 </dd>
-<dt class="field-even">Repeating Matches</dt>
-<dd class="field-even"><p>the syntax <strong>{varname&lt;regex&gt;!}</strong> signifies a repeating match. Any text
-matched by the <cite>regex</cite> at that position will be added to a list called <cite>varname</cite>. This
-will be repeated until there is some text encountered which does not match the <cite>regex</cite>
-pattern. To match only a limited number of times you can use <strong>&lt;n&gt;</strong> where n is the
-number of matches you want, like this</p>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>{varname&lt;regex&gt;/?} # here `/` and `?` are wildcards
+{varname/?} # this is also valid
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="wildcards">
+<h2>Wildcards<a class="headerlink" href="#wildcards" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="field-list">
+<dt class="field-odd">Optional Placeholders (?)</dt>
+<dd class="field-odd"><p>the <strong>?</strong> wildcard designates an <em>optional placeholder</em>. If the placeholder
+does not match it will be ignored.</p>
+</dd>
+<dt class="field-even">Repeat Match (!)</dt>
+<dd class="field-even"><p><strong>!</strong> signifies a repeating match. The placeholder will be matched
+repeadtedly until there is some text which it does not match. The resulting matches
+will be stored as an attribute with the placeholder name on the text object.
+To match only a limited number of times you can add a number <strong>n</strong> after the wildcards
+in the placeholder.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>{varname&lt;regex&gt;!n}
 </pre></div>
 </div>
 <ul class="simple">
-<li><p>the repeat syntax also works with regular placeholders <strong>{varname!n}</strong>…
-this will capture each (whitespace delimited) token until the next pattern is found</p></li>
-<li><p>you can also use <strong>!!</strong> which will match every occurance of the pattern in the
-text, regardless of what shows up in between, up until the end of the template</p></li>
+<li><p>the repeat syntax also works with regular placeholders <strong>{varname!n}</strong>…</p></li>
+<li><p>you can also use <strong>~!</strong> which will search for each occurance of the pattern and ignore any
+non-matching text in between</p></li>
 </ul>
 </dd>
-<dt class="field-odd">Referencing previous placeholders</dt>
-<dd class="field-odd"><p>you can reference the matches to previous placeholders
-by writing <strong>\g&lt;name&gt;</strong> where <em>name</em> is the name of the placeholder. \g&lt;name&gt; will match
-the captured text exacty and will not capture a value.</p>
-</dd>
-</dl>
-<ul>
-<li><p>You can also use \g&lt;name&gt; inside of the regex for a placeholder, in which case it will be captured.</p>
-<blockquote>
-<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span>{name&lt;^.*\g&lt;name&gt;.*$&gt;}
-# matches any line of text which contains whatever
-# was captured by placeholder &#39;name&#39;
-</pre></div>
-</div>
-</div></blockquote>
-</li>
-</ul>
-<p>This is the same syntax that’s used by the <a class="reference external" href="https://docs.python.org/2/library/re.html">re module</a></p>
-<dl class="field-list">
-<dt class="field-odd">Embedding other textobjects</dt>
-<dd class="field-odd"><p>you can embed textobjects into template strings using <strong>&#64;classname</strong>
-make sure that the class of the textobject is available within the enclosing scope</p>
-</dd>
-<dt class="field-even">Embedding template strings</dt>
-<dd class="field-even"><p>you can also use template string syntax within a placeholder regex.</p>
+<dt class="field-odd">Embedding template strings</dt>
+<dd class="field-odd"><p>you can also use template string syntax within a placeholder expression.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">placeholder</span><span class="o">&lt;</span><span class="p">{</span><span class="n">inner1</span><span class="p">}</span> <span class="p">{</span><span class="n">inner2</span><span class="p">}</span><span class="o">&gt;</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>the resulting object will have an attribute called <cite>placeholder</cite> which is itself
-a textobject with attributes <cite>inner1</cite> and <cite>inner2</cite></p>
+<p>the resulting object will have an attribute called <cite>placeholder</cite> which is a an
+object with attributes <cite>inner1</cite> and <cite>inner2</cite></p>
 </dd>
 </dl>
 </div></blockquote>
 </div>
 </div>
 <div class="section" id="examples">
-<span id="id2"></span><h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="basic-usage">
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
 <p>Suppose we want to pull all of the ‘TODO:’ lines out of our source files</p>
@@ -269,63 +256,32 @@ a textobject with attributes <cite>inner1</cite> and <cite>inner2</cite></p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">textobjects</span> <span class="kn">import</span> <span class="n">textobject</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span> <span class="o">=</span> <span class="n">textobject</span><span class="p">(</span><span class="s1">&#39;ToDo&#39;</span><span class="p">,</span> <span class="s1">&#39;TODO: </span><span class="si">{item}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span> <span class="o">=</span> <span class="n">textobject</span><span class="p">(</span><span class="s1">&#39;ToDo&#39;</span><span class="p">,</span> <span class="s1">&#39;TODO: {item&lt;.*&gt;$}&#39;</span><span class="p">)</span>
 <span class="go">&lt;class ToDo&gt;</span>
 </pre></div>
 </div>
 <p>This will take everything after the text “TODO: ” as being the
 todo item.</p>
-<p>by default additional whitespace at the beginning, end, and in-between tokens will be trimmed.
-This behavior can be changed by setting the <cite>trim_whitespace</cite> variable on the class.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span><span class="o">.</span><span class="n">trim_whitespace</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="go">None</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span> <span class="o">=</span> <span class="n">textobject</span><span class="p">(</span><span class="s1">&#39;ToDo&#39;</span><span class="p">,</span> <span class="s1">&#39;TODO: </span><span class="si">{item}</span><span class="s1">$&#39;</span><span class="p">,</span> <span class="n">trim_whitespace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="go">&lt;class ToDo&gt;</span>
-</pre></div>
-</div>
 <p>Then we can create one like this:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span> <span class="o">=</span> <span class="n">ToDo</span><span class="p">(</span><span class="s2">&quot;TODO: make a new todo&quot;</span><span class="p">)</span>
-<span class="go">ToDo(item=&quot;make a new todo&quot;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span> <span class="o">=</span> <span class="n">ToDo</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="s2">&quot;make a new todo&quot;</span><span class="p">)</span>
-<span class="go">ToDo(item=&quot;make a new todo&quot;)</span>
+<span class="go">&quot;make a new todo&quot;</span>
 </pre></div>
 </div>
 <p>but not like this, since this won’t match the template</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">todo</span> <span class="o">=</span> <span class="n">ToDo</span><span class="p">(</span><span class="s2">&quot;TODO: can&#39;t </span><span class="se">\n</span><span class="s2"> have </span><span class="se">\n</span><span class="s2"> newlines </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="go">ValueError(&#39;the given string does not match the template&#39;)</span>
+<p>Now let’s pull all the TODO: lines out of a file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TODO</span><span class="p">:</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">todo</span>
+<span class="n">TODO</span><span class="p">:</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">another</span> <span class="n">one</span>
+<span class="n">TODO</span><span class="p">:</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">different</span> <span class="n">one</span>
 </pre></div>
 </div>
-<p>Now let’s pull all the TODO: lines out of a file</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="s1">&#39;myfile.txt&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;myfile.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+<span class="go">[&#39;TODO: this is a todo&#39;, &#39;TODO: this is another one&#39;, &#39;TODO: this is a different one&#39;]</span>
 </pre></div>
 </div>
 <p>Or just the first one</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="s1">&#39;myfile.txt&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="repeating-patterns">
-<h2>Repeating Patterns<a class="headerlink" href="#repeating-patterns" title="Permalink to this headline">¶</a></h2>
-<p>Much of the time there is a repeating pattern in the data. This is
-easy to capture using a textobject. To illustrate this we will make a
-textobject which recognizes JSON</p>
-<p>a json object begins with <strong>{</strong> then we can have:</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li><p><strong>“name”:”value”,</strong> as many times as needed</p></li>
-<li><p><strong>“name”:”value”</strong> only once</p></li>
-<li><p><strong>“name”:[</strong> followed by <strong>“value”</strong> or <strong>“value”,</strong> ,  and eventually <strong>]</strong> or <strong>],</strong></p></li>
-</ol>
-</div></blockquote>
-<p>then it ends with <strong>}</strong></p>
-<p>The template for this goes as follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;{</span>
-<span class="sd">        {entries&lt;&quot;{name}&quot;:&quot;{value},&quot;&gt;}!!?</span>
-<span class="sd">        {lists&lt;&quot;{name}&quot;:[]&gt;}</span>
-
-
-
-<span class="sd">}&quot;&quot;&quot;</span>
+<span class="go">&quot;ToDo: this is a todo&quot;</span>
 </pre></div>
 </div>
 </div>

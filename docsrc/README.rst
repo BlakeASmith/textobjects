@@ -45,6 +45,7 @@ _____________________________________
 
 
         .. code-block:: python
+
                 {varname<regex>/?} # here `/` and `?` are wildcards
                 {varname/?} # this is also valid 
 

@@ -85,12 +85,13 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="README.html">Template Syntax</a></li>
+<li class="toctree-l1"><a class="reference internal" href="README.html#wildcards">Wildcards</a></li>
 <li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#repeating-patterns">Repeating Patterns</a></li>
 <li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">template module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="textobjects.html">textobjects module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="typedef.html">typedef module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="wildcards.html">wildcards module</a></li>
 </ul>
@@ -160,29 +161,13 @@
   <div class="section" id="module-template">
 <span id="template-module"></span><h1>template module<a class="headerlink" href="#module-template" title="Permalink to this headline">¶</a></h1>
 <p>Parse template strings to create evaluator functions</p>
-<dl class="class">
-<dt id="template.TemplateEvaluator">
-<em class="property">class </em><code class="sig-prename descclassname">template.</code><code class="sig-name descname">TemplateEvaluator</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#template.TemplateEvaluator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>interpret placeholder strings to pull data from text</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>**kwargs</strong> – <p>options for parsing and evaluating the template.
-all keyword arguments will be passed to the constructor
-of <code class="xref py py-class docutils literal notranslate"><span class="pre">typedef.options</span></code> like this:</p>
-<blockquote>
-<div><p>typedef.Options(<a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs)</p>
-</div></blockquote>
-</p>
-</dd>
-</dl>
-<dl class="method">
-<dt id="template.TemplateEvaluator.parse">
-<code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">template: str</em><span class="sig-paren">)</span><a class="headerlink" href="#template.TemplateEvaluator.parse" title="Permalink to this definition">¶</a></dt>
+<dl class="function">
+<dt id="template.evaluate">
+<code class="sig-prename descclassname">template.</code><code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param">template: str</em>, <em class="sig-param">options=Options(strip_whitespace=True</em>, <em class="sig-param">strict_whitespace=False</em>, <em class="sig-param">capture_groups=(0</em>, <em class="sig-param">)</em>, <em class="sig-param">re_flags=(re.MULTILINE</em>, <em class="sig-param">)</em>, <em class="sig-param">all_matches=False)</em>, <em class="sig-param">rec=False</em><span class="sig-paren">)</span><a class="headerlink" href="#template.evaluate" title="Permalink to this definition">¶</a></dt>
 <dd><p>evaluate the Template</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>template</strong> (<em>str</em>) – the template string to parse</p>
+<dd class="field-odd"><p><strong>template</strong> (<em>str</em>) – the template string to evaluate</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>a function to produce an object containing
@@ -194,11 +179,26 @@ attributes for any placeholders in the template</p>
 </dl>
 </dd></dl>
 
+<dl class="function">
+<dt id="template.parse">
+<code class="sig-prename descclassname">template.</code><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param">template</em>, <em class="sig-param">parent=None</em>, <em class="sig-param">options=Options(strip_whitespace=True</em>, <em class="sig-param">strict_whitespace=False</em>, <em class="sig-param">capture_groups=(0</em>, <em class="sig-param">)</em>, <em class="sig-param">re_flags=(re.MULTILINE</em>, <em class="sig-param">)</em>, <em class="sig-param">all_matches=False)</em><span class="sig-paren">)</span><a class="headerlink" href="#template.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>produce a list of Patterns associated with the
+appropriate placeholder information</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>template</strong> (<em>str</em>) – the template string to parse</p>
+</dd>
+</dl>
+<p>Returns:</p>
+<dl class="simple">
+<dt>(ParsedTemplate):</dt><dd><p>each Placeholder in the template assocated to it’s pattern</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="template.parse_placeholder">
-<code class="sig-prename descclassname">template.</code><code class="sig-name descname">parse_placeholder</code><span class="sig-paren">(</span><em class="sig-param">placeholder: str</em><span class="sig-paren">)</span><a class="headerlink" href="#template.parse_placeholder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">template.</code><code class="sig-name descname">parse_placeholder</code><span class="sig-paren">(</span><em class="sig-param">placeholder: str</em>, <em class="sig-param">parent=None</em>, <em class="sig-param">options=Options(strip_whitespace=True</em>, <em class="sig-param">strict_whitespace=False</em>, <em class="sig-param">capture_groups=(0</em>, <em class="sig-param">)</em>, <em class="sig-param">re_flags=(re.MULTILINE</em>, <em class="sig-param">)</em>, <em class="sig-param">all_matches=False)</em><span class="sig-paren">)</span><a class="headerlink" href="#template.parse_placeholder" title="Permalink to this definition">¶</a></dt>
 <dd><p>extract name, expression, and wildcards from the text of a placeholder</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

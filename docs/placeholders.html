@@ -162,7 +162,7 @@
 <p>placeholders for template strings</p>
 <dl class="data">
 <dt id="placeholders.DEFAULT_PLACEHOLDER_SUBEXPR">
-<code class="sig-prename descclassname">placeholders.</code><code class="sig-name descname">DEFAULT_PLACEHOLDER_SUBEXPR</code><em class="property"> = '\\s*\\S+?(?=\\s|$)'</em><a class="headerlink" href="#placeholders.DEFAULT_PLACEHOLDER_SUBEXPR" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">placeholders.</code><code class="sig-name descname">DEFAULT_PLACEHOLDER_SUBEXPR</code><em class="property"> = '\\w+'</em><a class="headerlink" href="#placeholders.DEFAULT_PLACEHOLDER_SUBEXPR" title="Permalink to this definition">¶</a></dt>
 <dd><p>The pattern to be substituted when no pattern is specified for the placeholder eg. (<strong>{name}</strong>)</p>
 </dd></dl>
 
@@ -186,7 +186,7 @@
 
 <dl class="class">
 <dt id="placeholders.Placeholder">
-<em class="property">class </em><code class="sig-prename descclassname">placeholders.</code><code class="sig-name descname">Placeholder</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">subexpr: str = '\s*\S+?(?=\s|$)'</em>, <em class="sig-param">wildcards: Iterable = None</em>, <em class="sig-param">limit: int = 0</em><span class="sig-paren">)</span><a class="headerlink" href="#placeholders.Placeholder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">placeholders.</code><code class="sig-name descname">Placeholder</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">subexpr: str = '\w+'</em>, <em class="sig-param">wildcards: Iterable = None</em>, <em class="sig-param">limit: int = 0</em>, <em class="sig-param">parent: Optional[placeholders.Placeholder] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#placeholders.Placeholder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>a template string placeholder</p>
 <dl class="attribute">
@@ -201,8 +201,14 @@
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="placeholders.Placeholder.parent">
+<code class="sig-name descname">parent</code><em class="property">: Placeholder</em><em class="property"> = None</em><a class="headerlink" href="#placeholders.Placeholder.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parent placeholder</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="placeholders.Placeholder.subexpr">
-<code class="sig-name descname">subexpr</code><em class="property">: str</em><em class="property"> = '\\s*\\S+?(?=\\s|$)'</em><a class="headerlink" href="#placeholders.Placeholder.subexpr" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">subexpr</code><em class="property">: str</em><em class="property"> = '\\w+'</em><a class="headerlink" href="#placeholders.Placeholder.subexpr" title="Permalink to this definition">¶</a></dt>
 <dd><p>the subexpression of the placeholder, it can be any
 arbitrary template string. Whatever text matches this expression
 will be stored</p>
