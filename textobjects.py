@@ -98,7 +98,7 @@ def create(name, template, options=None, **kwargs):
         name (str): the name of the class which will be created
         template (str): The template to base the TextObject off of
         options (typedef.Options): the options for parsing the template<Plug>_
-        **kwargs: alternative to :member:`options`. a new :class:`typedef.options`
+        **kwargs: alternative to :obj:`options`. a new :class:`typedef.options`
             will be created with any keyword arguments given here
 
     """
@@ -110,8 +110,16 @@ def create(name, template, options=None, **kwargs):
     return TxtObj
 
 def textobject(template, options=None, **kwargs):
+    """decorator for creating a TextObject with initialization from a 
+    __post_init__ function
+
+    Args:
+        template (str): The template string to use
+        options (typedef.Options): the options for parsing the template
+        **kwargs: alternative to :obj:`Options`. any keyword arguments given 
+            will be passed to the contstructor of :class:`typedef.Options`
+    """
     options = options if options else templates.Options(**kwargs)
-    print(options)
     def decorator(postinit):
         cls = create(postinit.__name__, template, options)
         cls.__post_init__ = postinit

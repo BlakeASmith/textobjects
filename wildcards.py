@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import template
 import copy
 
-
 wildcards = {}
 
 @dataclass
@@ -165,7 +164,7 @@ def transformation(symbol, store_func=store_result, recurse_func=recursive_wrap)
                 @wraps(ctx.func)
                 def wrap_pattern(text):
                     context, obj = ctx.func(text)
-                    subcontext, result = func(context.remaining_text, ctx.pattern, context, obj)
+                    subcontext, result = func(context.remaining_text, ctx.pattern, context, obj, ctx)
                     return store_func(obj, result, ctx.placeholder, subcontext)
                 return wrap_pattern
         Wildcard(symbol, evaluate, 'transformation')
@@ -214,13 +213,13 @@ def __search_recurse(ctx, store_func):
     return wrap_recurse
 
 @transformation('/', recurse_func=__search_recurse)
-def search(text, pattern, ctx, obj):
+def search(text, pattern, ctx, obj, evalctx):
     """Search for the placeholder expression in the text"""
     match = pattern.search(text)
     return __apply_options_with_match(match, pattern, text, ctx, obj)
 
 @transformation('=')
-def match(text: str, pattern: Pattern, ctx:ExecutionContext, obj):
+def match(text: str, pattern: Pattern, ctx:ExecutionContext, obj, evalctx):
     """match the pattern in the text"""
     match = pattern.match(text)
     return __apply_options_with_match(match, pattern, text, ctx, obj)
@@ -230,12 +229,15 @@ def __repeatmatch_recurse(ctx, store_func):
     def wrap_recurse(text):
         context, obj = ctx.func(text)
         operation = template.evaluate(ctx.pattern, options=ctx.options, rec=True)
-        results = []
+        results, counter = [], 0
         try: 
             while True:
                 subctx, subobj = operation(context.remaining_text)
                 context.remaining_text = subctx.remaining_text
                 results.append(subobj)
+                counter += 1
+                if counter == ctx.placeholder.limit:
+                    break
         except:
             store_func(obj, results, ctx.placeholder, context)
             return (context, obj)
@@ -243,14 +245,18 @@ def __repeatmatch_recurse(ctx, store_func):
     return wrap_recurse
 
 @transformation('!', recurse_func=__repeatmatch_recurse)
-def repeatmatch(text, pattern, ctx, obj):
+def repeatmatch(text, pattern, ctx, obj, evalctx):
     all_results = []
+    counter = 0
     while True:
         match = pattern.match(ctx.remaining_text)
         if not match:
             break
         ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
         all_results.append(results)
+        counter += 1
+        if counter == evalctx.placeholder.limit:
+            break
     return (ctx, all_results)
 
 def __repeatsearch_recurse(ctx, store_func):
@@ -260,10 +266,14 @@ def __repeatsearch_recurse(ctx, store_func):
         operation = template.evaluate(ctx.pattern, options=ctx.options, rec=True)
         searchtext = context.remaining_text
         results = []
+        counter = 0
         while searchtext:
             try: 
                 subctx, subobj = operation(searchtext)
                 results.append(subobj)
+                counter += 1
+                if counter == ctx.placeholder.limit:
+                    break
                 context.remaining_text = subctx.remaining_text
                 searchtext = context.remaining_text
             except:
@@ -273,14 +283,17 @@ def __repeatsearch_recurse(ctx, store_func):
     return wrap_recurse
 
 @transformation('~!', recurse_func=__repeatsearch_recurse)
-def repeatsearch(text, pattern, ctx, obj):
-    matches = []
+def repeatsearch(text, pattern, ctx, obj, evalctx):
+    matches, counter = [], 0
     while True:
         match = pattern.search(ctx.remaining_text)
         if not match:
             break
         ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
         matches.append(results)
+        counter += 1
+        if counter == evalctx.placeholder.limit:
+            break
     return (ctx, matches)
 
 @preamble('?')
