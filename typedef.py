@@ -46,6 +46,8 @@ class ExecutionContext:
     """the portion of text which has been consumed in a previous 
     TemplateTransformation but can still be matched againsed """
 
+    matched_text: str = ''
+
     options: Options = Options()
     """the options set for the :class:`template.TemplateEvaluator`"""
 
@@ -70,8 +72,8 @@ class EvaluationContext:
     """The current Placeholder being considered"""
     pattern: TemplatePattern
     """Either the Pattern to be evaluated, or parsed template of the see `template.parse`_"""
-    template: Any
-    """The :obj:`TemplateEvaluator` which is calling the function"""
+    options: Any
+    """The :obj:`Options` to be used when parsing templates"""
 
     
 ParsedTemplate = Iterable[Tuple[Optional[Placeholder], TemplatePattern]]

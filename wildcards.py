@@ -8,6 +8,7 @@ from typing import Mapping, Callable, Literal, Pattern, Match, Tuple
 from functools import wraps
 from collections import UserList
 from dataclasses import dataclass
+import template
 import copy
 
 
@@ -129,7 +130,7 @@ def recursive_wrap(ctx, store_func):
     @wraps(ctx.func)
     def wrap_recurse(text):
         context, obj = ctx.func(text)
-        operation = ctx.template.parse(ctx.pattern, rec=True)
+        operation = template.evaluate(ctx.pattern, options=ctx.options, rec=True)
         try:
             subctx, subobj = operation(context.remaining_text)
             context.remaining_text = subctx.remaining_text 
@@ -176,6 +177,7 @@ def __apply_options_with_match(match, pattern, text, ctx, obj):
     if not match:
         raise TemplateMatchError(f'{text} does not match {pattern.pattern}', ctx, obj)
     ctx.remaining_text = text[match.end(0):]
+    ctx.matched_text = ctx.text.replace(ctx.remaining_text, '')
     namedgroups = match.groupdict()
 
     try:
@@ -199,7 +201,7 @@ def __search_recurse(ctx, store_func):
     @wraps(ctx.func)
     def wrap_recurse(text):
         context, obj = ctx.func(text)
-        operation = ctx.template.parse(ctx.pattern, rec=True)
+        operation = template.evaluate(ctx.pattern, options=ctx.options, rec=True)
         searchtext = context.remaining_text
         while searchtext:
             try: 
@@ -223,7 +225,24 @@ def match(text: str, pattern: Pattern, ctx:ExecutionContext, obj):
     match = pattern.match(text)
     return __apply_options_with_match(match, pattern, text, ctx, obj)
 
-@transformation('!')
+def __repeatmatch_recurse(ctx, store_func):
+    @wraps(ctx.func)
+    def wrap_recurse(text):
+        context, obj = ctx.func(text)
+        operation = template.evaluate(ctx.pattern, options=ctx.options, rec=True)
+        results = []
+        try: 
+            while True:
+                subctx, subobj = operation(context.remaining_text)
+                context.remaining_text = subctx.remaining_text
+                results.append(subobj)
+        except:
+            store_func(obj, results, ctx.placeholder, context)
+            return (context, obj)
+        raise ValueError
+    return wrap_recurse
+
+@transformation('!', recurse_func=__repeatmatch_recurse)
 def repeatmatch(text, pattern, ctx, obj):
     all_results = []
     while True:
@@ -234,7 +253,26 @@ def repeatmatch(text, pattern, ctx, obj):
         all_results.append(results)
     return (ctx, all_results)
 
-@transformation('~!')
+def __repeatsearch_recurse(ctx, store_func):
+    @wraps(ctx.func)
+    def wrap_recurse(text):
+        context, obj = ctx.func(text)
+        operation = template.evaluate(ctx.pattern, options=ctx.options, rec=True)
+        searchtext = context.remaining_text
+        results = []
+        while searchtext:
+            try: 
+                subctx, subobj = operation(searchtext)
+                results.append(subobj)
+                context.remaining_text = subctx.remaining_text
+                searchtext = context.remaining_text
+            except:
+                searchtext = searchtext[1:]
+        return store_func(obj, results, ctx.placeholder, context)
+        raise ValueError
+    return wrap_recurse
+
+@transformation('~!', recurse_func=__repeatsearch_recurse)
 def repeatsearch(text, pattern, ctx, obj):
     matches = []
     while True:
@@ -257,8 +295,8 @@ def optional(parsedtemplate, index, ctx):
     def split(text, parsedtemplate=parsedtemplate):
         context, obj = ctx.func(text)
         try:
-            matches = ctx.template.parse(parsedtemplate[:index] 
-                    + parsedtemplate[index+2:])(context.remaining_text)
+            matches = template.evaluate(parsedtemplate[:index] 
+                    + parsedtemplate[index+2:], options=ctx.options)(context.remaining_text)
             if not isinstance(matches, list):
                 matches = [matches]
             for match in matches:
