@@ -1,15 +1,15 @@
 """Wildcards for template strings"""
 import re
-from typedef import TemplateMatchError, EvaluationContext, \
+import copy
+from textobjects.typedef import TemplateMatchError, EvaluationContext, \
 ExecutionContext, ParsedTemplate, TemplateTransformation
+import textobjects.template as template
 from abc import ABC, abstractmethod
 from types import SimpleNamespace
 from typing import Mapping, Callable, Literal, Pattern, Match, Tuple
 from functools import wraps
 from collections import UserList
 from dataclasses import dataclass
-import template
-import copy
 
 wildcards = {}
 

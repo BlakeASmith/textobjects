@@ -1,4 +1,4 @@
-import template
+import textobjects.template
 from unittest import main, TestCase
 
 class TestWildcards(TestCase):

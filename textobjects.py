@@ -1,5 +1,5 @@
-import template as templates
-import wildcards
+import textobjects.template as templates
+import textobjects.wildcards as wildcards
 from collections import UserString
 from typing import Pattern
 from collections.abc import Iterable

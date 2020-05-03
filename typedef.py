@@ -1,5 +1,5 @@
 import re
-from placeholders import Placeholder
+from textobjects.placeholders import Placeholder
 from typing import Pattern, Iterable, Union, Callable, Tuple, Optional, Any
 from types import SimpleNamespace
 from dataclasses import dataclass, field

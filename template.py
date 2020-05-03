@@ -1,9 +1,9 @@
 """Parse template strings to create evaluator functions"""
 import re
-import wildcards
-from wildcards import Wildcard
-from placeholders import *
-from typedef import EvaluationContext, ExecutionContext, TemplateMatchError, Options
+import textobjects.wildcards as wildcards
+from textobjects.wildcards import Wildcard
+from textobjects.placeholders import *
+from textobjects.typedef import EvaluationContext, ExecutionContext, TemplateMatchError, Options
 from typing import Pattern
 from types import SimpleNamespace
 from functools import wraps
