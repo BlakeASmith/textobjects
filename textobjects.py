@@ -5,7 +5,59 @@ from typing import Pattern
 from collections.abc import Iterable
 from abc import ABC, abstractmethod, abstractproperty
 
-class TextObject(ABC, UserString):
+class BaseTextObject(ABC, UserString):
+
+    @classmethod
+    @abstractmethod
+    def match(cls, text):
+        """match the beginning of the text against the text object
+
+        Args:
+            text (str): the text to match against
+
+        Returns:
+            (:obj:`TextObject`) the textobject instance, or None if the text did
+                not match
+
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def search(cls, text):
+        """search for the TextObject in the text and
+        return the first occurance
+
+        Args:
+            text (str): the text to search 
+
+        Returns:
+            (TextObject) a TextObject instance or None if there is no match
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def findall(cls, text):
+        """find all occurances of the TextObject in the text
+
+        Args: 
+            text (str): the text to search
+
+        Returns:
+            (List[TextObject]) a list of the occurances found in the text, 
+                if there are not found the list will be empty
+
+        """
+        pass
+
+def setspan(txtobj, enclosing_text):
+    start = enclosing_text.find(str(txtobj))
+    end = start + len(txtobj)
+    txtobj.span = (start, end)
+    return txtobj
+
+class TextObject(BaseTextObject):
     """a text object based on a template string
 
     Args:
@@ -20,17 +72,26 @@ class TextObject(ABC, UserString):
         cls.options = options
         cls.evaluate = templates.evaluate(template, options)
 
-    def __init__(self, text):
+    def __new__(cls, *args, text=None, **kwargs):
+        self = super(BaseTextObject, cls).__new__(cls)
+        if not text:
+            text = cls.__textrepr__(*args, **kwargs)
         self.enclosing_text = text
         obj = self.__class__.evaluate(text)
 
         for k, v in vars(obj).items():
             setattr(self, k, v)
-        UserString.__init__(self, obj.text)
-        self.__post_init__()
 
-    def __post_init__(self):
+        UserString.__init__(self, obj.text)
+        cls.__init__(self, *args, **kwargs)
+        return self
+
+    def __init__(self, *args, **kwargs):
         pass
+
+    @classmethod
+    def __textrepr__(cls, text):
+        return text
 
     @classmethod
     def match(cls, text):
@@ -45,7 +106,8 @@ class TextObject(ABC, UserString):
 
         """
         try:
-            return cls(text)
+            obj = cls(text=text)
+            obj = setspan(obj, text)
         except Exception as ex:
             raise ex
             return None
@@ -64,7 +126,9 @@ class TextObject(ABC, UserString):
         looptxt = text
         while looptxt:
             try:
-                return cls(looptxt)
+                obj = cls(text=looptxt)
+                obj.enclosing_text = text
+                obj = setspan(obj, text)
             except:
                 looptxt = looptxt[1:]
 
@@ -84,14 +148,16 @@ class TextObject(ABC, UserString):
         results = []
         while looptxt:
             try:
-                result = cls(looptxt)
+                result = cls(text=looptxt)
+                result.enclosing_text = text
+                result = setspan(result, text)
                 results.append(result)
                 looptxt=looptxt[len(result):]
             except:
                 looptxt = looptxt[1:]
         return results
 
-def create(name, template, options=None, **kwargs):
+def create(name, template, options=None, totext=None, init=None, **kwargs):
     """create a new TextObject based on the template
 
     Args:
@@ -106,10 +172,19 @@ def create(name, template, options=None, **kwargs):
 
     class TxtObj(TextObject, template=template, options=options):
         pass
+    if init:
+        TxtObj.__init__ = init
+    if totext:
+        TxtObj.__textrepr__ = totext
+    else:
+        def default_textrepr(text):
+            return text
+        TxtObj.__textrepr__ = default_textrepr
+
     TxtObj.__name__ = TxtObj.__qualname__ = name
     return TxtObj
 
-def textobject(template, options=None, **kwargs):
+def textobject(template, options=None, totext = None, **kwargs):
     """decorator for creating a TextObject with initialization from a 
     __post_init__ function
 
@@ -120,9 +195,11 @@ def textobject(template, options=None, **kwargs):
             will be passed to the contstructor of :class:`typedef.Options`
     """
     options = options if options else templates.Options(**kwargs)
-    def decorator(postinit):
-        cls = create(postinit.__name__, template, options)
-        cls.__post_init__ = postinit
+    def decorator(init):
+        cls = create(init.__name__, template, options)
+        cls.__init__ = init
+        if totext:
+            cls.__textrepr__ = totext
         return cls
     return decorator
 

@@ -248,8 +248,12 @@ def __repeatmatch_recurse(ctx, store_func):
 def repeatmatch(text, pattern, ctx, obj, evalctx):
     all_results = []
     counter = 0
+    without_lookahead = re.sub('\(\?\=.*?\)$', '', pattern.pattern)
+    lookahead = re.search('\(\?\=(.*?)\)$', pattern.pattern)
+    if lookahead:
+        lookahead = lookahead.group(1)
     while True:
-        match = pattern.match(ctx.remaining_text)
+        match = re.match(without_lookahead, ctx.remaining_text, *ctx.options.re_flags)
         if not match:
             break
         ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
@@ -257,6 +261,9 @@ def repeatmatch(text, pattern, ctx, obj, evalctx):
         counter += 1
         if counter == evalctx.placeholder.limit:
             break
+        if lookahead and re.match(lookahead, ctx.remaining_text):
+            if not re.match(lookahead, ' '):
+                break
     return (ctx, all_results)
 
 def __repeatsearch_recurse(ctx, store_func):
@@ -290,7 +297,7 @@ def repeatsearch(text, pattern, ctx, obj, evalctx):
     if lookahead:
         lookahead = lookahead.group(1)
     while True:
-        match = re.search(without_lookahead, ctx.remaining_text)
+        match = re.search(without_lookahead, ctx.remaining_text, *ctx.options.re_flags)
         if not match:
             break
         ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
@@ -299,7 +306,8 @@ def repeatsearch(text, pattern, ctx, obj, evalctx):
         if counter == evalctx.placeholder.limit:
             break
         if lookahead and re.match(lookahead, ctx.remaining_text):
-            break
+            if not re.match(lookahead, ' '):
+                break
     return (ctx, matches)
 
 @preamble('?')

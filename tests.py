@@ -1,4 +1,8 @@
-import textobjects.template
+import re
+import time
+import textobjects.template as template
+from textobjects import storage
+import textobjects
 from unittest import main, TestCase
 
 class TestWildcards(TestCase):
@@ -59,6 +63,22 @@ class TestWildcards(TestCase):
         evaluate = template.evaluate('{word1} {foos<foo>~!} {word2}')
         obj = evaluate('word1 foo | foo | foo | foo | not a foo | foo word2')
         assert len(obj.foos) == 6
+
+class TextStorage(TestCase):
+    def test_mappings(self):
+        ToDo = textobjects.create('ToDo', '^#TODO: {item<.+>}$')
+        store = storage.TextObjectStorage([ToDo], 'textobjects/storage.py')
+        class Observer(storage.TextObjectObserver):
+            def on_textobject_added(self, txtobj):
+                print(txtobj, 'was added')
+            def on_textobject_removed(self, txtobj):
+                print(txtobj, 'was removed')
+
+        store.subscribe(Observer())
+        store += ['#TODO: 7', '#TODO: 2']
+        store.clear()
+
+
 
 if __name__ == '__main__':
     main() 
