@@ -35,8 +35,6 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="wildcards module" href="wildcards.html" />
-    <link rel="prev" title="tests module" href="tests.html" />
     <link href="_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -82,19 +80,11 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="README.html">Template Syntax</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#repeating-patterns">Repeating Patterns</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">typedef module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="wildcards.html">wildcards module</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">typedef module</a></li>
 </ul>
-
+</div>
             
           
         </div>
@@ -161,7 +151,7 @@
 <span id="typedef-module"></span><h1>typedef module<a class="headerlink" href="#module-typedef" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="typedef.EvaluationContext">
-<em class="property">class </em><code class="sig-prename descclassname">typedef.</code><code class="sig-name descname">EvaluationContext</code><span class="sig-paren">(</span><em class="sig-param">func: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]], placeholder: placeholders.Placeholder, pattern: Union[Pattern, Iterable[Tuple[Optional[placeholders.Placeholder], Pattern]]], options: Any</em><span class="sig-paren">)</span><a class="headerlink" href="#typedef.EvaluationContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">typedef.</code><code class="sig-name descname">EvaluationContext</code><span class="sig-paren">(</span><em class="sig-param">func: Callable[[str], Tuple[typedef.ExecutionContext, types.SimpleNamespace]], placeholder: textobjects.placeholders.Placeholder, pattern: Union[Pattern, Iterable[Tuple[Optional[textobjects.placeholders.Placeholder], Pattern]]], options: Any</em><span class="sig-paren">)</span><a class="headerlink" href="#typedef.EvaluationContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The context object which is passed along while defining TemplateTransformations</p>
 <dl class="attribute">
@@ -279,7 +269,7 @@ value for a placeholder. Default is the entire match</p>
 
 <dl class="data">
 <dt id="typedef.ParsedTemplate">
-<code class="sig-prename descclassname">typedef.</code><code class="sig-name descname">ParsedTemplate</code><em class="property"> = typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Pattern]]]]]</em><a class="headerlink" href="#typedef.ParsedTemplate" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">typedef.</code><code class="sig-name descname">ParsedTemplate</code><em class="property"> = typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Pattern]]]]]</em><a class="headerlink" href="#typedef.ParsedTemplate" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="exception">
@@ -291,7 +281,7 @@ value for a placeholder. Default is the entire match</p>
 
 <dl class="data">
 <dt id="typedef.TemplatePattern">
-<code class="sig-prename descclassname">typedef.</code><code class="sig-name descname">TemplatePattern</code><em class="property"> = typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Pattern]]]</em><a class="headerlink" href="#typedef.TemplatePattern" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">typedef.</code><code class="sig-name descname">TemplatePattern</code><em class="property"> = typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Pattern]]]</em><a class="headerlink" href="#typedef.TemplatePattern" title="Permalink to this definition">¶</a></dt>
 <dd><p>Either a parsed template or a re.RegexObject</p>
 </dd></dl>
 
@@ -308,15 +298,6 @@ value for a placeholder. Default is the entire match</p>
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="wildcards.html" class="btn btn-neutral float-right" title="wildcards module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="tests.html" class="btn btn-neutral float-left" title="tests module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>
