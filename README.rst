@@ -122,10 +122,76 @@ Now let's pull all the TODO: lines out of a file::
 >>> ToDo.findall(Path('myfile.txt').read_text())
 ['TODO: this is a todo', 'TODO: this is another one', 'TODO: this is a different one']
 
-Or just the first one
+We can access the file (or a set of files) as a collection using :class:`storage.TextObjectStorage`
 
->>> ToDo.search(file='myfile.txt')
-"ToDo: this is a todo"
+.. code-block:: python
+
+        from textobjects import storage
+        store = storage.TextObjectStorage([ToDo], 'myfile.txt')
+
+:class:`storage.TextObjectStorage` implements all functions of a MutableSequence, so we can read and
+modify the file as follows:
+
+>>> for todo in store: print(todo)
+TODO: this is a todo
+TODO: this is another one
+TODO: this is a different one
+
+>>> print(store)
+['TODO: this is a todo', 'TODO: this is another one', 'TODO: this is a different one']
+
+>>> store += ['TODO: new todo']
+['TODO: this is a todo', 'TODO: this is another one', 'TODO: this is a different one', 'TODO: new todo']
+
+>>> del store[0]
+None
+
+>>> print(store)
+['TODO: this is another one', 'TODO: this is a different one', 'TODO: new todo']
+
+>>> store.clear()
+None
+
+>>> print(store)
+[]
+
+
+To monitor changes to textobjects in the file:
+
+.. code-block:: python
+
+        class MyObserver(storage.TextObjectObserver):
+            def on_textobject_added(self, txtobj):
+                print(txtobj, 'was added')
+            def on_textobject_removed(self, txtobj):
+                print(txtobj, 'was removed')
+            def on_textobject_moved(self, txtobj):
+                print(txtobj, 'was moved')
+
+        store.subscribe(MyObserver())
+
+Now the appropriate methods of :obj:`MyObserver()` will be called when
+an item is added, removed, or moved within the storage.
+
+Additionally we can monitor changes which occur in the storage files by using :func:`storage.sync`
+
+.. code-block:: python
+
+        with storage.sync(store):
+           some_process()
+
+Now, while the :func:`some_process()` is executing, the :class:`TextObjectStorage` will be
+updated any time the associated files are modified. This means that the methods of 
+:obj:`MyObserver()` will be called even if the textobject was added/removed/moved in the
+file by some outside proccess.
+
+Alternitivley we can use :func:`storage.watch`
+
+.. code-block:: python
+
+        stop = storage.watch(store)
+        some_process()
+        stop()
 
 
 
