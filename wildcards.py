@@ -285,14 +285,20 @@ def __repeatsearch_recurse(ctx, store_func):
 @transformation('~!', recurse_func=__repeatsearch_recurse)
 def repeatsearch(text, pattern, ctx, obj, evalctx):
     matches, counter = [], 0
+    without_lookahead = re.sub('\(\?\=.*?\)$', '', pattern.pattern)
+    lookahead = re.search('\(\?\=(.*?)\)$', pattern.pattern)
+    if lookahead:
+        lookahead = lookahead.group(1)
     while True:
-        match = pattern.search(ctx.remaining_text)
+        match = re.search(without_lookahead, ctx.remaining_text)
         if not match:
             break
         ctx, results = __apply_options_with_match(match, pattern, ctx.remaining_text, ctx, obj)
         matches.append(results)
         counter += 1
         if counter == evalctx.placeholder.limit:
+            break
+        if lookahead and re.match(lookahead, ctx.remaining_text):
             break
     return (ctx, matches)
 
