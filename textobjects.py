@@ -1,5 +1,7 @@
+import re
 import textobjects.template as templates
 import textobjects.wildcards as wildcards
+import textobjects.placeholders as placeholders
 from collections import UserString
 from typing import Pattern
 from collections.abc import Iterable
@@ -70,10 +72,17 @@ class TextObject(BaseTextObject):
         if options.all_matches: 
             raise NotImplementedError('all_matches option not supported')
         cls.options = options
-        cls.evaluate = templates.evaluate(template, options)
+        txtobjs = {cls.__name__:cls for cls in TextObject.__subclasses__()}
+        subbed_txtobjs = re.finditer('<(@(\w+))>', template)
+        subbed_tempate = template
+        for pl in subbed_txtobjs:
+            subbed_tempate = subbed_tempate.replace(
+                    pl.group(1), txtobjs[pl.group(2)].template)
+        cls.template = subbed_tempate
+        cls.evaluate = templates.evaluate(cls.template, options)
 
     def __new__(cls, *args, text=None, **kwargs):
-        self = super(BaseTextObject, cls).__new__(cls)
+        self = object.__new__(cls)
         if not text:
             text = cls.__textrepr__(*args, **kwargs)
         self.enclosing_text = text
@@ -83,7 +92,7 @@ class TextObject(BaseTextObject):
             setattr(self, k, v)
 
         UserString.__init__(self, obj.text)
-        cls.__init__(self, *args, **kwargs)
+        cls.__pre_init__(self)
         return self
 
     def __init__(self, *args, **kwargs):
@@ -108,9 +117,9 @@ class TextObject(BaseTextObject):
         try:
             obj = cls(text=text)
             obj = setspan(obj, text)
+            return obj
         except Exception as ex:
             raise ex
-            return None
 
     @classmethod
     def search(cls, text):
@@ -129,6 +138,7 @@ class TextObject(BaseTextObject):
                 obj = cls(text=looptxt)
                 obj.enclosing_text = text
                 obj = setspan(obj, text)
+                return obj
             except:
                 looptxt = looptxt[1:]
 
@@ -182,6 +192,7 @@ def create(name, template, options=None, totext=None, init=None, **kwargs):
         TxtObj.__textrepr__ = default_textrepr
 
     TxtObj.__name__ = TxtObj.__qualname__ = name
+    TxtObj.__pre_init__ = lambda self: None
     return TxtObj
 
 def textobject(template, options=None, totext = None, **kwargs):
@@ -197,7 +208,7 @@ def textobject(template, options=None, totext = None, **kwargs):
     options = options if options else templates.Options(**kwargs)
     def decorator(init):
         cls = create(init.__name__, template, options)
-        cls.__init__ = init
+        cls.__pre_init__ = init
         if totext:
             cls.__textrepr__ = totext
         return cls

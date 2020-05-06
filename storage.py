@@ -7,19 +7,15 @@ from collections.abc import MutableSequence
 from abc import ABC, abstractmethod
 from watchdog import events, observers
 
-
-
 class TextObjectObserver(ABC):
-    def on_textobject_removed(self, textobject):
+    def on_textobject_removed(self, textobject, typ, path):
         pass
 
-    def on_textobject_moved(self, textobject, previous_span):
+    def on_textobject_moved(self, textobject, previous_span, typ, path):
         pass
 
-    def on_textobject_added(self, textobject):
+    def on_textobject_added(self, textobject, typ, path):
         pass
-
-
 
 class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
     """Persistant storage of :class:`textobjects.TextObject` subclasses
@@ -38,10 +34,12 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             will be replaced.
     """
 
-    def __init__(self, txtobjtypes, primaryfile, files=[]):
+    def __init__(self, txtobjtypes, primaryfile=None, files=[]):
         self.txtobjtypes = txtobjtypes
         self.primaryfile = Path(primaryfile)
-        self.files = [Path(f) for f in [primaryfile] + files]
+        self.files = [Path(f) for f in files]
+        if self.primaryfile not in self.files:
+            self.files.append(primaryfile)
         self._entries = None
         self.observers = []
 
@@ -54,6 +52,7 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
         return len(self.entries())
     
     def __getitem__(self, key):
+        print(key)
         if isinstance(key, int):
             return list(self.entries())[key]
         else:
@@ -76,7 +75,6 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             path.write_text(text)
             self.update()
 
-
     def __str__(self):
         return str(self.entries())
 
@@ -85,7 +83,7 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             changed = False
             for typ in self.txtobjtypes:
                 try:
-                    item = typ(item)
+                    item = typ(text=item)
                     changed = True
                 except:
                     pass
@@ -118,7 +116,7 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
         self.observers.append(observer)
 
     def on_modified(self, event):
-        if event.src_path in self.files:
+        if Path(event.src_path).name in [p.name for p in self.files]:
             self.update()
 
     def update(self):
@@ -139,15 +137,35 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             for obj1, obj2 in product(oldset, newset):
                 if obj1 == obj2 and obj1.span != obj2.span:
                     for obs in self.observers:
-                        obs.on_textobject_moved(obj2, obj1.span)
+                        obs.on_textobject_moved(obj2, obj1.span, *new[obj2])
 
             for txtobj in removed:
                 for obs in self.observers:
-                    obs.on_textobject_removed(txtobj)
+                    obs.on_textobject_removed(txtobj, *old[txtobj])
 
         for txtobj in added:
             for obs in self.observers:
-                obs.on_textobject_added(txtobj)
+                obs.on_textobject_added(txtobj, *new[txtobj])
+
+class TextObjectDirectoryTree(TextObjectStorage):
+    def __init__(self, txtobjtypes, writefile, root, glob, recursive=False):
+        self.txtobjtypes = txtobjtypes
+        self.primaryfile = Path(writefile)
+        if not self.primaryfile.exists():
+            self.primaryfile.touch()
+        self.root = Path(root)
+        if recursive:
+            files = self.root.rglob(glob)
+        else:
+            files = self.root.glob(glob)
+        self.files = list(files)
+
+        if self.primaryfile not in self.files:
+            self.files.append(self.primaryfile)
+
+        self._entries = None
+        self.observers = []
+        self.update()
 
 class TextObjectStorageSyncronization:
     """Context manager which updates a :obj:`TextObjectStorage`
