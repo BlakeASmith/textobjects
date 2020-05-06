@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>storage module &mdash; textobjects 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> textobjects
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">storage module</a></li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">textobjects</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>storage module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/storage.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-storage">
+<span id="storage-module"></span><h1>storage module<a class="headerlink" href="#module-storage" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="storage.TextObjectObserver">
+<em class="property">class </em><code class="sig-prename descclassname">storage.</code><code class="sig-name descname">TextObjectObserver</code><a class="headerlink" href="#storage.TextObjectObserver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<dl class="method">
+<dt id="storage.TextObjectObserver.on_textobject_added">
+<code class="sig-name descname">on_textobject_added</code><span class="sig-paren">(</span><em class="sig-param">textobject</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectObserver.on_textobject_added" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectObserver.on_textobject_moved">
+<code class="sig-name descname">on_textobject_moved</code><span class="sig-paren">(</span><em class="sig-param">textobject</em>, <em class="sig-param">previous_span</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectObserver.on_textobject_moved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectObserver.on_textobject_removed">
+<code class="sig-name descname">on_textobject_removed</code><span class="sig-paren">(</span><em class="sig-param">textobject</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectObserver.on_textobject_removed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="storage.TextObjectStorage">
+<em class="property">class </em><code class="sig-prename descclassname">storage.</code><code class="sig-name descname">TextObjectStorage</code><span class="sig-paren">(</span><em class="sig-param">txtobjtypes</em>, <em class="sig-param">primaryfile</em>, <em class="sig-param">files=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.MutableSequence</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">watchdog.events.FileSystemEventHandler</span></code></p>
+<p>Persistant storage of <code class="xref py py-class docutils literal notranslate"><span class="pre">textobjects.TextObject</span></code> subclasses
+abstracted as a mutable sequence</p>
+<dl class="attribute">
+<dt id="storage.TextObjectStorage.txtobjtypes">
+<code class="sig-name descname">txtobjtypes</code><a class="headerlink" href="#storage.TextObjectStorage.txtobjtypes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The TextObject subclasses which
+will be stored</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>List[textobjects.TextObject]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="storage.TextObjectStorage.primaryfile">
+<code class="sig-name descname">primaryfile</code><a class="headerlink" href="#storage.TextObjectStorage.primaryfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>the path to the primary storage file. Entries will be
+added to this file when a new item is added.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="storage.TextObjectStorage.files">
+<code class="sig-name descname">files</code><a class="headerlink" href="#storage.TextObjectStorage.files" title="Permalink to this definition">¶</a></dt>
+<dd><p>the paths to any storage files. All occurances of
+the <a class="reference internal" href="#storage.TextObjectStorage.txtobjtypes" title="storage.TextObjectStorage.txtobjtypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">txtobjtypes</span></code></a> in these files will show up in the sequence.
+When a textobject is updated the occurance of it in it’s respective file
+will be replaced.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectStorage.entries">
+<code class="sig-name descname">entries</code><span class="sig-paren">(</span><em class="sig-param">updated=False</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorage.entries" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectStorage.insert">
+<code class="sig-name descname">insert</code><span class="sig-paren">(</span><em class="sig-param">index</em>, <em class="sig-param">item</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorage.insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>S.insert(index, value) – insert value before index</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectStorage.on_modified">
+<code class="sig-name descname">on_modified</code><span class="sig-paren">(</span><em class="sig-param">event</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorage.on_modified" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a file or directory is modified.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>event</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">DirModifiedEvent</span></code> or <code class="xref py py-class docutils literal notranslate"><span class="pre">FileModifiedEvent</span></code>) – Event representing file/directory modification.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectStorage.subscribe">
+<code class="sig-name descname">subscribe</code><span class="sig-paren">(</span><em class="sig-param">observer: storage.TextObjectObserver</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorage.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="storage.TextObjectStorage.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorage.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="storage.TextObjectStorageSyncronization">
+<em class="property">class </em><code class="sig-prename descclassname">storage.</code><code class="sig-name descname">TextObjectStorageSyncronization</code><span class="sig-paren">(</span><em class="sig-param">*textobjectstores</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.TextObjectStorageSyncronization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Context manager which updates a <a class="reference internal" href="#storage.TextObjectStorage" title="storage.TextObjectStorage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TextObjectStorage</span></code></a>
+each time any of the underlying files are changed</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="storage.asyncwatch">
+<em class="property">async </em><code class="sig-prename descclassname">storage.</code><code class="sig-name descname">asyncwatch</code><span class="sig-paren">(</span><em class="sig-param">*textobjectstores: storage.TextObjectStorage</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.asyncwatch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="storage.sync">
+<code class="sig-prename descclassname">storage.</code><code class="sig-name descname">sync</code><span class="sig-paren">(</span><em class="sig-param">*textobjectstorage: storage.TextObjectStorage</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>create a Context Manager which handles syncronization</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="storage.watch">
+<code class="sig-prename descclassname">storage.</code><code class="sig-name descname">watch</code><span class="sig-paren">(</span><em class="sig-param">*textobjectstores: storage.TextObjectStorage</em><span class="sig-paren">)</span><a class="headerlink" href="#storage.watch" title="Permalink to this definition">¶</a></dt>
+<dd><p>start a co-routine to watch the files assocated to
+the <code class="xref py py-obj docutils literal notranslate"><span class="pre">textobjectstores</span></code> an update the TextObjectStorage instances
+when the files are modified</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*textobjectstores</strong> (<a class="reference internal" href="#storage.TextObjectStorage" title="storage.TextObjectStorage"><em>TextObjectStorage</em></a>) – the TextObjectStorage instances to be updated</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Retuns:</dt><dd><p>(Callable) a function which stops the coroutine</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, BlakeSmith
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

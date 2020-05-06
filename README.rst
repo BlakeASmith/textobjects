@@ -182,7 +182,11 @@ Additionally we can monitor changes which occur in the storage files by using :f
 
 Now, while the :func:`some_process()` is executing, the :class:`TextObjectStorage` will be
 updated any time the associated files are modified. This means that the methods of 
+<<<<<<< HEAD
 :ob:`MyObserver()` will be called even if the textobject was added/removed/moved in the
+=======
+:obj:`MyObserver()` will be called even if the textobject was added/removed/moved in the
+>>>>>>> e5928e57c970a612167d85d5f275ab091ef16fd5
 file by some outside proccess.
 
 Alternitivley we can use :func:`storage.watch`

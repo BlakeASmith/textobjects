@@ -35,7 +35,6 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="typedef module" href="typedef.html" />
     <link href="_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -81,20 +80,11 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="README.html">Template Syntax</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#wildcards">Wildcards</a></li>
-<li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="textobjects.html">textobjects module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="typedef.html">typedef module</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">wildcards module</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">wildcards module</a></li>
 </ul>
-
+</div>
             
           
         </div>
@@ -162,19 +152,19 @@
 <p>Wildcards for template strings</p>
 <dl class="data">
 <dt id="wildcards.PostambleFunction">
-<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">PostambleFunction</code><em class="property"> = typing.Callable[[typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Pattern]]]]], int, typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[typedef.ExecutionContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.PostambleFunction" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">PostambleFunction</code><em class="property"> = typing.Callable[[typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Pattern]]]]], int, textobjects.typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[textobjects.typedef.ExecutionContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.PostambleFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>The function type for a postamble</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="wildcards.PreambleFunction">
-<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">PreambleFunction</code><em class="property"> = typing.Callable[[typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[placeholders.Placeholder, NoneType], typing.Pattern]]]]], int, typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[typedef.ExecutionContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.PreambleFunction" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">PreambleFunction</code><em class="property"> = typing.Callable[[typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Union[typing.Pattern, typing.Iterable[typing.Tuple[typing.Union[textobjects.placeholders.Placeholder, NoneType], typing.Pattern]]]]], int, textobjects.typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[textobjects.typedef.ExecutionContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.PreambleFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>The function type for a preamble</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="wildcards.TransformationFunction">
-<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">TransformationFunction</code><em class="property"> = typing.Callable[[typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[typedef.EvaluationContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.TransformationFunction" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">TransformationFunction</code><em class="property"> = typing.Callable[[textobjects.typedef.EvaluationContext], typing.Callable[[str], typing.Tuple[textobjects.typedef.EvaluationContext, types.SimpleNamespace]]]</em><a class="headerlink" href="#wildcards.TransformationFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>The function type for a transformation</p>
 </dd></dl>
 
@@ -247,7 +237,7 @@ It must be unique and contain only non-alphanumeric characters
 
 <dl class="function">
 <dt id="wildcards.match">
-<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">match</code><span class="sig-paren">(</span><em class="sig-param">text: str</em>, <em class="sig-param">pattern: Pattern</em>, <em class="sig-param">ctx: typedef.ExecutionContext</em>, <em class="sig-param">obj</em>, <em class="sig-param">evalctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.match" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">wildcards.</code><code class="sig-name descname">match</code><span class="sig-paren">(</span><em class="sig-param">text: str</em>, <em class="sig-param">pattern: Pattern</em>, <em class="sig-param">ctx: textobjects.typedef.ExecutionContext</em>, <em class="sig-param">obj</em>, <em class="sig-param">evalctx</em><span class="sig-paren">)</span><a class="headerlink" href="#wildcards.match" title="Permalink to this definition">¶</a></dt>
 <dd><p>match the pattern in the text</p>
 </dd></dl>
 
@@ -368,13 +358,6 @@ It must also match the signature and return types of <a class="reference interna
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-      
-        <a href="typedef.html" class="btn btn-neutral float-left" title="typedef module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

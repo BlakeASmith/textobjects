@@ -35,8 +35,6 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="context module" href="context.html" />
-    <link rel="prev" title="Welcome to textobjects’s documentation!" href="index.html" />
     <link href="_static/style.css" rel="stylesheet" type="text/css">
 
 </head>
@@ -82,23 +80,16 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Template Syntax</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#wildcards">Wildcards</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Template Syntax</a></li>
+<li><a class="reference internal" href="#wildcards">Wildcards</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="textobjects.html">textobjects module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="typedef.html">typedef module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="wildcards.html">wildcards module</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 </ul>
-
+</div>
             
           
         </div>
@@ -171,6 +162,7 @@ not always be sufficient in terms of readability.</p>
 <p>Other times the data format is out of our control
 but we’d still like to read that text as structured data. This
 is exactly what <strong>textobjects</strong> is for!</p>
+<p>you can see the full docs here <a class="reference external" href="https://blakeasmith.github.io/textobjects/">https://blakeasmith.github.io/textobjects/</a></p>
 <div class="section" id="template-syntax">
 <h1>Template Syntax<a class="headerlink" href="#template-syntax" title="Permalink to this headline">¶</a></h1>
 <p><strong>textobjects</strong> uses a template syntax to identify a text object:</p>
@@ -186,7 +178,7 @@ which will be set to the text which was found in that position.</p>
 <li><p>by default a placeholder will match a single whitespace delimited word</p></li>
 <li><p>you can change the matching behavior by including a <strong>&lt;regex&gt;</strong> tag.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">varname</span><span class="o">&lt;</span><span class="n">regex</span><span class="o">&gt;</span><span class="p">}</span> <span class="c1"># `varname` is the name for the capture attribute</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;{varname&lt;regex&gt;}&quot;</span> <span class="c1"># `varname` is the name for the capture attribute</span>
                  <span class="c1"># `regex` is a regular expression to match</span>
 </pre></div>
 </div>
@@ -197,7 +189,7 @@ which is supported by python’s <a class="reference external" href="https://doc
 this will affect which strings will match the template, but will not capture any data.</p>
 </dd>
 </dl>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>^{name&lt;[a-z]&gt;}$ # matches a single lowercase word on it&#39;s own line
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;^{name&lt;[a-z]&gt;}$&quot;</span> <span class="c1"># matches a single lowercase word on it&#39;s own line</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -206,8 +198,8 @@ this will affect which strings will match the template, but will not capture any
 as <strong>Wildcards</strong> which change the matching behavior</p>
 </dd>
 </dl>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>{varname&lt;regex&gt;/?} # here `/` and `?` are wildcards
-{varname/?} # this is also valid
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;{varname&lt;regex&gt;/?}&quot;</span> <span class="c1"># here `/` and `?` are wildcards</span>
+<span class="s2">&quot;{varname/?}&quot;</span> <span class="c1"># this is also valid</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -226,7 +218,7 @@ repeadtedly until there is some text which it does not match. The resulting matc
 will be stored as an attribute with the placeholder name on the text object.
 To match only a limited number of times you can add a number <strong>n</strong> after the wildcards
 in the placeholder.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>{varname&lt;regex&gt;!n}
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;{varname&lt;regex&gt;!n}&quot;</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -237,7 +229,7 @@ non-matching text in between</p></li>
 </dd>
 <dt class="field-odd">Embedding template strings</dt>
 <dd class="field-odd"><p>you can also use template string syntax within a placeholder expression.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">placeholder</span><span class="o">&lt;</span><span class="p">{</span><span class="n">inner1</span><span class="p">}</span> <span class="p">{</span><span class="n">inner2</span><span class="p">}</span><span class="o">&gt;</span><span class="p">}</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;{placeholder&lt;</span><span class="si">{inner1}</span><span class="s2"> </span><span class="si">{inner2}</span><span class="s2">&gt;}&quot;</span>
 </pre></div>
 </div>
 <p>the resulting object will have an attribute called <cite>placeholder</cite> which is a an
@@ -279,9 +271,70 @@ todo item.</p>
 <span class="go">[&#39;TODO: this is a todo&#39;, &#39;TODO: this is another one&#39;, &#39;TODO: this is a different one&#39;]</span>
 </pre></div>
 </div>
-<p>Or just the first one</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ToDo</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="s1">&#39;myfile.txt&#39;</span><span class="p">)</span>
-<span class="go">&quot;ToDo: this is a todo&quot;</span>
+<p>We can access the file (or a set of files) as a collection using <a class="reference internal" href="storage.html#storage.TextObjectStorage" title="storage.TextObjectStorage"><code class="xref py py-class docutils literal notranslate"><span class="pre">storage.TextObjectStorage</span></code></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">textobjects</span> <span class="kn">import</span> <span class="n">storage</span>
+<span class="n">store</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">TextObjectStorage</span><span class="p">([</span><span class="n">ToDo</span><span class="p">],</span> <span class="s1">&#39;myfile.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="storage.html#storage.TextObjectStorage" title="storage.TextObjectStorage"><code class="xref py py-class docutils literal notranslate"><span class="pre">storage.TextObjectStorage</span></code></a> implements all functions of a MutableSequence, so we can read and
+modify the file as follows:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">todo</span> <span class="ow">in</span> <span class="n">store</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">todo</span><span class="p">)</span>
+<span class="go">TODO: this is a todo</span>
+<span class="go">TODO: this is another one</span>
+<span class="go">TODO: this is a different one</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+<span class="go">[&#39;TODO: this is a todo&#39;, &#39;TODO: this is another one&#39;, &#39;TODO: this is a different one&#39;]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">store</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;TODO: new todo&#39;</span><span class="p">]</span>
+<span class="go">[&#39;TODO: this is a todo&#39;, &#39;TODO: this is another one&#39;, &#39;TODO: this is a different one&#39;, &#39;TODO: new todo&#39;]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">store</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">None</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+<span class="go">[&#39;TODO: this is another one&#39;, &#39;TODO: this is a different one&#39;, &#39;TODO: new todo&#39;]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">store</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+<span class="go">None</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+<span class="go">[]</span>
+</pre></div>
+</div>
+<p>To monitor changes to textobjects in the file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyObserver</span><span class="p">(</span><span class="n">storage</span><span class="o">.</span><span class="n">TextObjectObserver</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_textobject_added</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txtobj</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">txtobj</span><span class="p">,</span> <span class="s1">&#39;was added&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">on_textobject_removed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txtobj</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">txtobj</span><span class="p">,</span> <span class="s1">&#39;was removed&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">on_textobject_moved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txtobj</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">txtobj</span><span class="p">,</span> <span class="s1">&#39;was moved&#39;</span><span class="p">)</span>
+
+<span class="n">store</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">MyObserver</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Now the appropriate methods of <code class="xref py py-obj docutils literal notranslate"><span class="pre">MyObserver()</span></code> will be called when
+an item is added, removed, or moved within the storage.</p>
+<p>Additionally we can monitor changes which occur in the storage files by using <a class="reference internal" href="storage.html#storage.sync" title="storage.sync"><code class="xref py py-func docutils literal notranslate"><span class="pre">storage.sync()</span></code></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">storage</span><span class="o">.</span><span class="n">sync</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+   <span class="n">some_process</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now, while the <code class="xref py py-func docutils literal notranslate"><span class="pre">some_process()</span></code> is executing, the <code class="xref py py-class docutils literal notranslate"><span class="pre">TextObjectStorage</span></code> will be
+updated any time the associated files are modified. This means that the methods of
+<code class="xref py py-obj docutils literal notranslate"><span class="pre">MyObserver()</span></code> will be called even if the textobject was added/removed/moved in the
+file by some outside proccess.</p>
+<p>Alternitivley we can use <a class="reference internal" href="storage.html#storage.watch" title="storage.watch"><code class="xref py py-func docutils literal notranslate"><span class="pre">storage.watch()</span></code></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">stop</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">watch</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+<span class="n">some_process</span><span class="p">()</span>
+<span class="n">stop</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -291,15 +344,6 @@ todo item.</p>
            
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="context.html" class="btn btn-neutral float-right" title="context module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to textobjects’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

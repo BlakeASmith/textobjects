@@ -88,6 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="README.html#basic-usage">Basic Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="context.html">context module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="placeholders.html">placeholders module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="storage.html">storage module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="template.html">template module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">tests module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="textobjects.html">textobjects module</a></li>
@@ -164,6 +165,7 @@
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
+ | <a href="#I"><strong>I</strong></a>
  | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
@@ -173,6 +175,7 @@
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
 </div>
@@ -181,11 +184,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="wildcards.html#wildcards.Wildcard.action">action (wildcards.Wildcard attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="typedef.html#typedef.Options.all_matches">all_matches (typedef.Options attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="typedef.html#typedef.ExecutionContext.alternate_solutions">alternate_solutions (typedef.ExecutionContext attribute)</a>
+</li>
+      <li><a href="storage.html#storage.asyncwatch">asyncwatch() (in module storage)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -195,13 +200,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="typedef.html#typedef.Options.capture_groups">capture_groups (typedef.Options attribute)</a>
 </li>
-      <li><a href="typedef.html#typedef.ExecutionContext.consumed_text">consumed_text (typedef.ExecutionContext attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="context.html#module-context">context (module)</a>
+      <li><a href="typedef.html#typedef.ExecutionContext.consumed_text">consumed_text (typedef.ExecutionContext attribute)</a>
 </li>
-      <li><a href="textobjects.html#textobjects.create">create() (in module textobjects)</a>
+      <li><a href="context.html#module-context">context (module)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -217,6 +220,8 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="storage.html#storage.TextObjectStorage.entries">entries() (storage.TextObjectStorage method)</a>
+</li>
       <li><a href="template.html#template.evaluate">evaluate() (in module template)</a>
 </li>
   </ul></td>
@@ -231,11 +236,19 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="textobjects.html#textobjects.TextObject.findall">findall() (textobjects.TextObject class method)</a>
+      <li><a href="storage.html#storage.TextObjectStorage.files">files (storage.TextObjectStorage attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="typedef.html#typedef.EvaluationContext.func">func (typedef.EvaluationContext attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="storage.html#storage.TextObjectStorage.insert">insert() (storage.TextObjectStorage method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -260,11 +273,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="wildcards.html#wildcards.match">match() (in module wildcards)</a>
-
-      <ul>
-        <li><a href="textobjects.html#textobjects.TextObject.match">(textobjects.TextObject class method)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="typedef.html#typedef.ExecutionContext.matched_text">matched_text (typedef.ExecutionContext attribute)</a>
@@ -283,12 +292,20 @@
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="storage.html#storage.TextObjectStorage.on_modified">on_modified() (storage.TextObjectStorage method)</a>
+</li>
+      <li><a href="storage.html#storage.TextObjectObserver.on_textobject_added">on_textobject_added() (storage.TextObjectObserver method)</a>
+</li>
+      <li><a href="storage.html#storage.TextObjectObserver.on_textobject_moved">on_textobject_moved() (storage.TextObjectObserver method)</a>
+</li>
+      <li><a href="storage.html#storage.TextObjectObserver.on_textobject_removed">on_textobject_removed() (storage.TextObjectObserver method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="wildcards.html#wildcards.optional">optional() (in module wildcards)</a>
 </li>
       <li><a href="typedef.html#typedef.Options">Options (class in typedef)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="typedef.html#typedef.EvaluationContext.options">options (typedef.EvaluationContext attribute)</a>
 
       <ul>
@@ -341,6 +358,8 @@
 </li>
       <li><a href="wildcards.html#wildcards.Wildcards.preambles">preambles() (wildcards.Wildcards method)</a>
 </li>
+      <li><a href="storage.html#storage.TextObjectStorage.primaryfile">primaryfile (storage.TextObjectStorage attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -366,22 +385,24 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="wildcards.html#wildcards.search">search() (in module wildcards)</a>
-
-      <ul>
-        <li><a href="textobjects.html#textobjects.TextObject.search">(textobjects.TextObject class method)</a>
 </li>
-      </ul></li>
+      <li><a href="storage.html#module-storage">storage (module)</a>
+</li>
       <li><a href="wildcards.html#wildcards.store_result">store_result() (in module wildcards)</a>
+</li>
+      <li><a href="typedef.html#typedef.Options.strict_whitespace">strict_whitespace (typedef.Options attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="typedef.html#typedef.Options.strict_whitespace">strict_whitespace (typedef.Options attribute)</a>
-</li>
       <li><a href="typedef.html#typedef.Options.strip_whitespace">strip_whitespace (typedef.Options attribute)</a>
 </li>
       <li><a href="placeholders.html#placeholders.Placeholder.subexpr">subexpr (placeholders.Placeholder attribute)</a>
 </li>
+      <li><a href="storage.html#storage.TextObjectStorage.subscribe">subscribe() (storage.TextObjectStorage method)</a>
+</li>
       <li><a href="wildcards.html#wildcards.Wildcard.symbol">symbol (wildcards.Wildcard attribute)</a>
+</li>
+      <li><a href="storage.html#storage.sync">sync() (in module storage)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -403,6 +424,8 @@
 </li>
       <li><a href="tests.html#tests.TestWildcards.test_loose_repeat_match">test_loose_repeat_match() (tests.TestWildcards method)</a>
 </li>
+      <li><a href="tests.html#tests.TextStorage.test_mappings">test_mappings() (tests.TextStorage method)</a>
+</li>
       <li><a href="tests.html#tests.TestWildcards.test_multiple_placeholders">test_multiple_placeholders() (tests.TestWildcards method)</a>
 </li>
       <li><a href="tests.html#tests.TestWildcards.test_optional">test_optional() (tests.TestWildcards method)</a>
@@ -411,10 +434,10 @@
 </li>
       <li><a href="tests.html#tests.TestWildcards.test_repeat_match">test_repeat_match() (tests.TestWildcards method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tests.html#tests.TestWildcards.test_search">test_search() (tests.TestWildcards method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="tests.html#tests.TestWildcards.testbasicmatch">testbasicmatch() (tests.TestWildcards method)</a>
 </li>
       <li><a href="tests.html#module-tests">tests (module)</a>
@@ -423,11 +446,15 @@
 </li>
       <li><a href="typedef.html#typedef.ExecutionContext.text">text (typedef.ExecutionContext attribute)</a>
 </li>
-      <li><a href="textobjects.html#textobjects.TextObject">TextObject (class in textobjects)</a>
-</li>
-      <li><a href="textobjects.html#textobjects.textobject">textobject() (in module textobjects)</a>
+      <li><a href="storage.html#storage.TextObjectObserver">TextObjectObserver (class in storage)</a>
 </li>
       <li><a href="textobjects.html#module-textobjects">textobjects (module)</a>
+</li>
+      <li><a href="storage.html#storage.TextObjectStorage">TextObjectStorage (class in storage)</a>
+</li>
+      <li><a href="storage.html#storage.TextObjectStorageSyncronization">TextObjectStorageSyncronization (class in storage)</a>
+</li>
+      <li><a href="tests.html#tests.TextStorage">TextStorage (class in tests)</a>
 </li>
       <li><a href="wildcards.html#wildcards.transformation">transformation() (in module wildcards)</a>
 </li>
@@ -435,7 +462,17 @@
 </li>
       <li><a href="wildcards.html#wildcards.Wildcards.transformations">transformations() (wildcards.Wildcards method)</a>
 </li>
+      <li><a href="storage.html#storage.TextObjectStorage.txtobjtypes">txtobjtypes (storage.TextObjectStorage attribute)</a>
+</li>
       <li><a href="typedef.html#module-typedef">typedef (module)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="storage.html#storage.TextObjectStorage.update">update() (storage.TextObjectStorage method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -443,12 +480,14 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="wildcards.html#wildcards.Wildcard">Wildcard (class in wildcards)</a>
+      <li><a href="storage.html#storage.watch">watch() (in module storage)</a>
 </li>
-      <li><a href="wildcards.html#wildcards.Wildcards">Wildcards (class in wildcards)</a>
+      <li><a href="wildcards.html#wildcards.Wildcard">Wildcard (class in wildcards)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="wildcards.html#wildcards.Wildcards">Wildcards (class in wildcards)</a>
+</li>
       <li><a href="wildcards.html#module-wildcards">wildcards (module)</a>
 
       <ul>
