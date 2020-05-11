@@ -3,6 +3,7 @@ import re
 from typing import List
 
 wildcards = {'repeat':'!', 'optional':'?', 'search':'/'}
+"""the supported wildcard modifiers for a placehoder"""
 
 PLACEHOLDER_START, PLACEHOLDER_END = '{', '}'
 
@@ -16,25 +17,33 @@ PLACEHOLDER_PATTERN = re.compile(
 DEFAULT_PLACEHOLDER_SUBEXPR = '\S+'
 """The pattern to be substituted when no pattern is specified for the placeholder eg. (**{name}**)"""
 
-def node_by_wildcards(placeholder, pattern, rt):
-    if not placeholder:
-        return nodes.RegexMatchNode(None, pattern, rt)
-
+def apply_wildcards(placeholder, pattern, rt):
+    """insert the appropriate nodes in the tree based on the given wildcards"""
+    substitutions = re.findall('`.*?`', pattern)
+    """substitutions are surrounded in backticks, this covers python & shell interpolation, 
+    TextObject substitutions and previous match substitutions"""
     node = rt
-    wcards = placeholder['wildcards']
-    for wc in reversed(wcards):
-        if wc == wildcards['optional']:
-            node = nodes.OptionalNode(name=placeholder['name'], parent=node)
-        if wc == wildcards['repeat']:
-            node = nodes.RepeatNode(name=placeholder['name'], parent=node)
-        if wc == wildcards['search']:
-            node = nodes.SearchNode(name=placeholder['name'], parent=node)
 
-    if isinstance(pattern, str):
-        node = nodes.RegexMatchNode(placeholder['name'], pattern, node)
+    if placeholder:
+        wcards = placeholder['wildcards']
+        for wc in reversed(wcards): 
+            if wc == wildcards['optional']:
+                node = nodes.OptionalNode(name=placeholder['name'], parent=node)
+            if wc == wildcards['repeat']:
+                node = nodes.RepeatNode(name=placeholder['name'], parent=node)
+            if wc == wildcards['search']:
+                node = nodes.SearchNode(name=placeholder['name'], parent=node)
+
+    name = placeholder['name'] if placeholder else None
+
+    if isinstance(pattern, str) and not substitutions:
+        node = nodes.RegexMatchNode(name, pattern, node)
+    if substitutions:
+        node = nodes.SubstitutionNode(name, pattern, substitutions, node)
     return node
 
 def __parse(template):
+    """break the template up into regex sections and placeholder sections"""
     rstack, pstack, results = [0], [], []
     for i, c in enumerate(template):
         if c == PLACEHOLDER_START:
@@ -56,26 +65,40 @@ def __parse(template):
     results.append((None, template[rstack.pop():]))
     return [r for r in results if r[1]]
 
-def parse(template, name=None):
+def parse(template, name=None, showtree=False, returntree=False):
+    """create a StructuredText class from the given template
+    
+    Args: 
+        template (str): the template string to parse
+        name (str): The name for the class. If None is 
+            given it will be called :class:`SomeTextObject`
+        showtree (bool): If true a rendering of the execution tree
+            will be printed
+        returntree (bool): return the root node of the execution tree
+            instead of a class
+
+    Returns:
+        (:obj:`StructuredText`) a StructuredText subclass based on the template string
+
+    """
     parsedtemplate = __parse(template)
     rt = nodes.PatternNode(name)
     def _parse(rt, parsedtemplate):
         for ph, it in parsedtemplate:
             name = ph['name'] if ph else None
             if isinstance(it, List):
-                _parse(node_by_wildcards(ph, it, rt), it)
+                _parse(apply_wildcards(ph, it, rt), it)
             else:
-                node_by_wildcards(ph, it, rt)
+                apply_wildcards(ph, it, rt)
         return rt
     _parse(rt, parsedtemplate)
-    print(nodes.RenderTree(rt))
+    if showtree:
+        print(nodes.RenderTree(rt))
+    if returntree:
+        return rt
     return rt.textobjectclass
 
 
-
-ToDo = parse('TODO: {item}', 'ToDo')
-
-print(parse('\ToDo'))
 
 
 
