@@ -1,6 +1,6 @@
 import re
 import os
-from placeholders import *
+from textobjects.placeholders import *
 from collections import UserString, UserList
 from anytree import RenderTree, NodeMixin
 from abc import ABC, abstractmethod
