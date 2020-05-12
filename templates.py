@@ -19,7 +19,8 @@ DEFAULT_PLACEHOLDER_SUBEXPR = '\S+'
 
 def apply_wildcards(placeholder, pattern, rt):
     """insert the appropriate nodes in the tree based on the given wildcards"""
-    substitutions = re.findall('`.*?`', pattern)
+    if isinstance(pattern, str):
+        substitutions = re.findall('`.*?`', pattern)
     """substitutions are surrounded in backticks, this covers python & shell interpolation, 
     TextObject substitutions and previous match substitutions"""
     node = rt
@@ -37,9 +38,11 @@ def apply_wildcards(placeholder, pattern, rt):
     name = placeholder['name'] if placeholder else None
 
     if isinstance(pattern, str) and not substitutions:
-        node = nodes.RegexMatchNode(name, pattern, node)
-    if substitutions:
-        node = nodes.SubstitutionNode(name, pattern, substitutions, node)
+        if substitutions:
+            node = nodes.SubstitutionNode(name, pattern, substitutions, parent=node)
+        else:
+            node = nodes.RegexMatchNode(name, pattern, parent=node)
+
     return node
 
 def __parse(template):
@@ -97,8 +100,4 @@ def parse(template, name=None, showtree=False, returntree=False):
     if returntree:
         return rt
     return rt.textobjectclass
-
-
-
-
 

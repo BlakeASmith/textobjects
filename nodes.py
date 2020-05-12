@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Tuple, Mapping
 from functools import wraps
 from copy import deepcopy
+from itertools import takewhile, dropwhile
 
 @dataclass
 class Context:
@@ -65,10 +66,13 @@ class TextObject:
         txtobj.__class__ = cls
         return txtobj
         
-class StructuredText(TextObject, UserString): ...
+class StructuredText(TextObject, UserString): 
     """A TextObject which is also a string"""
-class ListTextObject(TextObject, UserList): ...
+    ...
+
+class ListTextObject(TextObject, UserList): 
     """A TextObject which is also a list"""
+    ...
 
 def textobjecttypes(cls=TextObject):
     """returns a mapping from class names to classes for all 
@@ -134,6 +138,22 @@ class PatternNode(NodeMixin):
     def textobjectclass(self):
         """produce a StructuredText subclass based on this nodes :func:`evaluate` method"""
         return textobject(self.name, self)
+
+    def lookahead(self, pattern, invoked_from=None):
+        """add a lookahead to the given pattern for the next regex expression in the template"""
+        try:
+            if self.children:
+                for child in list(dropwhile(lambda it: it != invoked_from, self.children))[1:]:
+                    if child.children:
+                        return child.lookahead(pattern)
+                    if hasattr(child, 'expression'):
+                        return f'{pattern}(?={child.expression})'
+        except KeyError: pass
+
+        if not self.parent:
+            return pattern
+
+        return self.parent.lookahead(pattern, self)
 
     def evaluate(self, ctx: Context) -> Tuple[Context, TextObject]:
         """create a StructuredText instance based on the child nodes 
@@ -275,6 +295,9 @@ class SearchNode(PatternNode):
             return ctx, list(results.values())[0]
 
         txtobj.__dict__.update(results)
+        if not results:
+            raise Exception
+
         return ctx, txtobj
 
 class EitherNode(PatternNode):
@@ -308,16 +331,23 @@ def shell_interpolation(expr, ctx):
     store the result as a attribte on the TextObject """
     stdout = os.popen(expr).read()
 
-class SubstitutionNode(PatternNode):
+class RegexNode(PatternNode):
+    """A PatternNode based on a regular expression"""
+    def __init__(self, name, expression, parent=None, children=[]):
+        super(RegexNode, self).__init__(name, parent, children)
+        self.expression = expression
+
+class SubstitutionNode(RegexNode):
     """apply any substitution blocks from a template string, this includes
     interpolation, TextObject substitution, and variable substitution (TODO:)"""
     def __init__(self, name, expresson, substitutions, parent=None, children=[]):
         super(SubstitutionNode, self).__init__(name, parent, children)
-        self.expresson = expresson
+        self._expresson = expresson
+        self.expresson = takewhile(lambda it: it != '`', expresson)
         self.substitutions = substitutions
 
     def evaluate(self, ctx):
-        exprs = re.split('`', self.expresson)
+        exprs = re.split('`', self._expresson)
         exprs = [expr for expr in exprs if expr]
         classnames = [sub.strip('`') for sub in self.substitutions]
         results = []
@@ -331,7 +361,9 @@ class SubstitutionNode(PatternNode):
             elif expr.startswith('sh'):
                 shell_interpolation(expr[2:].strip(), ctx)
             else:
-                match = re.match(expr, ctx.text)
+                self.expresson = expr
+                with_lookahead = self.lookahead(expr)
+                match = re.match(with_lookahead, ctx.text)
                 ctx.index += len(match.group(0))
 
         if len(results) == 1:
@@ -339,17 +371,11 @@ class SubstitutionNode(PatternNode):
 
         return ctx, {'subobjects':results}
 
-class RegexNode(PatternNode):
-    """A PatternNode based on a regular expression"""
-    def __init__(self, name, expression, parent=None, children=[]):
-        super(RegexNode, self).__init__(name, parent, children)
-        self.expression = expression
-
 class RegexMatchNode(RegexNode):
     """match the current text to the given expression and
     create a StructuredText from the result"""
     def evaluate(self, ctx: Context):
-        match = re.match(self.expression, ctx.text)
+        match = re.match(self.lookahead(self.expression), ctx.text)
         txtobj = StructuredText.from_regex_match(match, ctx)
         txtobj.__class__ = self.textobjectclass
         ctx.index = ctx.index + len(txtobj)
@@ -359,7 +385,7 @@ class RegexSearchNode(RegexNode):
     """search the current text for the given expression and
     create a StructuredText from the result"""
     def evaluate(self, ctx: Context):
-        match = re.search(self.expression, ctx.fulltext[ctx.index:])
+        match = re.search(self.lookahead(self.expression), ctx.text)
         txtobj = StructuredText.from_regex_match(match, ctx)
         txtobj.__class__ = self.textobjectclass
         text = ctx.fulltext[ctx.index:]
