@@ -2,6 +2,7 @@ import textobjects.nodes as nodes
 import re
 from typing import List
 
+
 wildcards = {'repeat':'!', 'optional':'?', 'search':'/'}
 """the supported wildcard modifiers for a placehoder"""
 
@@ -37,9 +38,9 @@ def apply_wildcards(placeholder, pattern, rt):
 
     name = placeholder['name'] if placeholder else None
 
-    if isinstance(pattern, str) and not substitutions:
+    if isinstance(pattern, str):
         if substitutions:
-            node = nodes.SubstitutionNode(name, pattern, substitutions, parent=node)
+            node = nodes.SubstitutionNode(name, pattern, substitutions=substitutions, parent=node)
         else:
             node = nodes.RegexMatchNode(name, pattern, parent=node)
 
