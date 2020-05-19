@@ -8,28 +8,123 @@ from textobjects.textobject import textobjecttypes
 from pathlib import Path
 from unittest import main, TestCase
 
-ToDo = textobjects.create('ToDo', '#TODO: {item<.*>}$')
+ToDo = textobjects.create('TTODO: don't
+
+
+
+
+O: don't
+
+
+
+
+
+
 todos_file = Path('todo.txt')
 
 class TestDocuments(TestCase):
     def setUp(self):
-        todos_file.touch()
+       TODO: {iTODO: {item<.*>}$')
 
-    def test_Page(self):
+
+
+
+ def test_Page(self):
         with textobjects.page(todos_file, ToDo) as todos:
             todos.clear()
-            todos.extend(['#TODO: foobar', '#TODO: bar'])
-            assert len(todos) == 2
+            todTODO: {item<.*>}$')
+
+
+
+itTODO: {item<.*>}$')
+
+
+
+
+']
+TODO: {it#TODO: 2']
+
+
+
+: 2']
+$>}#TODO: 2']
+
+
+
+]
+\d\d?/\d\d\d?\d?)>}',
+)
+
+assert len(todos) == 2
 
     def test_Document(TestCase):
-        with textobjects.page(todos_file, ToDo) as p1:
-            p1 += ['#TODO: 1', '#TODO: 2']
-            document = documents.Document(p1, *[documents.Page('#TODO: foo', ToDo) for i in range(0, 9)])
-            assert len(document) == 11
-            assert p1 in document
-            assert '#TODO: foo' in document
+     #TODO:#TODO: 2']
 
-    def test_glob(self):
+
+: #TODO: 2']
+
+
+
+O: foo'
+2']
+#TODO: 2']
+
+
+DO: TODO: #TODO: foo'
+
+
+
+
+ODO:#TODO: foo'
+
+
+#TODO: foo'
+
+
+o'
+ foo#TODO: foo'#TODO: foo'
+
+
+
+#TODO#TODO: foo'
+
+
+s#TODO: foo'
+
+
+oo'
+*[doc#TODO: foo'
+
+
+#TODO: foo'
+
+
+cu#TODO: foo'
+
+
+ len(docum#TODO: foo'
+
+
+ODO: foo'#TODO: foo'
+
+
+na #TODO#TODO: foo'
+
+
+O: foo'
+#TODO: foo'
+
+
+ODO: {item<.*$>}')
+*$>}')
+#TODO: foo'
+
+
+item<.*>}')
+
+document
+
+def test_glob(self):
         Comment = textobjects.create('Comment', '#{comment<.+>}$')
         test_dir = Path('testfiles')
         if not test_dir.exists():
@@ -64,12 +159,95 @@ class TestDocuments(TestCase):
         seq[0] = 7
         seq[5], seq[3] = seq[3], seq[5]
         assert seq[5] == l2[2]
-        assert seq[3] == l2[0]
-        assert seq[0] == 7 == l1[0]
-
-    def tearDown(self):
-        todos_file.unlink()
+        as#TODO: foo'
 
 
-if __name__ == '__main__':
-    main()
+]
+ssert seT#TODO: foo'
+
+
+<.#TODO: foo'
+
+
+ODO: 2']
+O#T#TODO: foo'
+
+
+
+
+OTODO: 2']
+
+
+TODO: {item<.*$>}')
+
+
+
+o#TOTODO: 2']
+
+
+
+
+
+DO:
+O:
+OTODO: {TODO: {item<#TODO: 2']
+
+
+
+
+
+
+
+
+
+TODO: {item<#TODO: 2']
+
+
+
+: thing
+#TODO: 2']
+
+
+#TODO: foo'
+
+
+
+#TODO: foo'
+
+
+#TODO: foo#TOD#TODO: foo#TODO: f#TODO: 7'TODO:
+
+
+
+
+
+#TODO: foo#TODO: f#TODO: 7'TODO:
+
+
+
+#TODO: f#TODO: 7'TODO:
+
+#TODO: 7'TODO:
+#TODO: 7'TTODO: thin#TODO: RTODO: {item<.TODO: thing
+
+
+
+
+TODO: thin#TODO: RTODO: {item<.TODO: thing
+
+
+
+#TODO: RTODO: {item<.TODO: thing
+
+
+TODO: {item<.TODO: thing
+
+TODO: thing
+#TODO: {i#TODO:
+#TODO: Read
+TODO: {item<TODO: thing
+
+TODO: thing
+TODO: {item<.*>}$')
+TODO: thing
+#TODO: Read

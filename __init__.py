@@ -1,1 +1,4 @@
-from textobjects.textobjects import textobject, TextObject, BaseTextObject, create
+from textobjects.lib import *
+from textobjects.documents import *
+from textobjects.textobject import StructuredText
+

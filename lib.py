@@ -3,27 +3,48 @@ from textobjects.textobject import StructuredText
 from typing import Iterable, Mapping
 from copy import deepcopy
 
-def create(name, template, post=None, construct=None):
+def create(name, template, post=None, construct=None, scope={}):
     cls = templates.parse(template, name)
-    if post:
-        init = cls.__init__
-        def __init__(self, *args, **kwargs):
-            init(self, *args, **kwargs)
-            post(self)
-        cls.__init__ = __init__
-        __match = cls.__match__
+    if not post:
+        post = lambda o: None
 
-        @classmethod
-        def __match__(cls, text, *args, **kwargs):
-            obj = __match(text)
+    init = cls.__init__
+    def __init__(self, *args, scope=scope, **kwargs):
+        init(self, *args, **kwargs)
+        post(self)
+    cls.__init__ = __init__
+    __match = cls.__match__
+
+    @classmethod
+    def __match__(cls, *args, **kwargs):
+        obj = __match(*args, scope=scope, **kwargs)
+        post(obj)
+        return obj
+    cls.__match__ = __match__
+
+    __findall = cls.__findall__
+
+    @classmethod
+    def __findall__(cls, *args, **kwargs):
+        lst = __findall(*args, **kwargs)
+        for obj in lst:
             post(obj)
-            return obj
-        cls.__match__ = __match__
+        return lst
+    cls.__findall__ = __findall__
+
+
+    __search = cls.__search__
+
+    @classmethod
+    def __search__(cls, *args, **kwargs):
+        obj = __search(*args, **kwargs)
+        post(obj)
+        return obj
+    cls.__search__ = __search__
+
     if construct:
         new = cls.__new__
         def __new__(cls, *args, **kwargs):
-            if not args or kwargs:
-                raise Exception
             newargs = construct(*args, **kwargs)
             if isinstance(newargs, Mapping):
                 return new(cls, **newargs)
@@ -47,7 +68,8 @@ def matchlines(Type: StructuredText, text: str) -> Iterable[StructuredText]:
     results = []
     for line in lines:
         try:
-            results.append(match(Type, line, text))
+            m = Type.__match__(line, text)
+            results.append(m)
         except:
             pass
     return results

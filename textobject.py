@@ -28,7 +28,7 @@ class TextObject:
     def from_context(cls, ctx):
         """create a TextObject based on a :class:`Context` object"""
         txtobj = TextObject(ctx.text, ctx.fulltext, 
-                ctx.index, len(ctx.fulltext))
+                ctx.index, None)
         txtobj.__class__ = cls
         return txtobj
 
@@ -62,10 +62,4 @@ def textobjecttypes(cls=TextObject):
         classes.update(textobjecttypes(subcls))
         classes[subcls.__name__] = subcls
     return classes
-
-
-
-
-    
-
 
