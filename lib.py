@@ -1,4 +1,4 @@
-from textobjects import templates, exceptions
+from textobjects import templates, exceptions, regex
 from textobjects.textobject import StructuredText
 from typing import Iterable, Mapping
 from copy import deepcopy
@@ -53,6 +53,16 @@ def create(name, template, post=None, construct=None, scope={}):
             return new(cls, newargs)
         cls.__new__ = __new__
     return cls
+
+def re(name, template):
+    """create a textobject class based on the template
+
+    .. note::
+
+        Only regular placeholders (no wildcards) are supported at this time
+
+    """
+    return regex.parse(name, template)
 
 def match(Type: StructuredText, text: str, enclosing=None):
     return Type.__match__(text, enclosing)
