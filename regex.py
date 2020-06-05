@@ -42,8 +42,6 @@ class RegexTextObject(textobject.StructuredText):
             to.others = m.groups()
             to_list.append(to.others)
         return to_list
-    
-
 
 def parse(name, template):
     _placeholders = re.finditer(placeholders.PLACEHOLDER_PATTERN, template)

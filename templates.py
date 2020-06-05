@@ -6,13 +6,13 @@ from typing import List
 wildcards = {'repeat':'!', 'optional':'?', 'search':'/'}
 """the supported wildcard modifiers for a placehoder"""
 
-PLACEHOLDER_START, PLACEHOLDER_END = '{', '}'
+PLACEHOLDER_START = '<'
+"""The start symbol for a Placeholder"""
 
-PLACEHOLDER_PATTERN = re.compile(
-        f'{PLACEHOLDER_START}(?P<name>\w+)' 
-        '(<(?P<subexpr>.*(?=>))>)?'
-        '(?P<wildcards>\D*)'
-        f'(?P<limit>\d?\d?\d?){PLACEHOLDER_END}')
+PLACEHOLDER_END = '>'
+"""The terminating symbol for a Placeholder"""
+
+PLACEHOLDER_PATTERN = re.compile(r"<(?P<name>\w+):?(?P<subexpr>.*?(?=:|>)):?(?P<wildcards>.*?):?(?P<limit>\d*?)>")
 """The pattern used to extract Placeholders from the template"""
 
 DEFAULT_PLACEHOLDER_SUBEXPR = '\S+'

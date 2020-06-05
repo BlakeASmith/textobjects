@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest import main, TestCase
 
 def test_regex_textobject():
-    Foo = regex.parse('Foo', "foo{bar<cat>}")
+    Foo = textobjects.create('Foo', 'foo<bar:cat>')
     print(Foo("foocat"))
 
 test_regex_textobject()
