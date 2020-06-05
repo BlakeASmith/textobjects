@@ -179,6 +179,29 @@ and parse out a date from the text following ':date:', putting it in an attribut
 "some words here :date: 11/12/2018"
 
 
+Regex Text Objects
+_________________________________
+
+The textobject library uses a tree structure internally in order to evaluate the textobjects and allow 
+for arbirarily complex structures. Though this provides many benifits it also involves many Python 
+function calls. When processing large inputs, these function calls show themselves to be quite expensive.
+
+Since Python's **re** module is implemented in C, it is extremley fast. Regex text objects 
+implement a subset of the functionality showcased above using only regular expressions, which leads to 
+a much faster runtime.
+
+At this time, only regular placeholders are supported (no wildcards, substitutions, or interpolation)
+
+To use regex textobjects use :func:`re`
+
+.. code-block:: python
+
+        MyTxtObj = textobjects.re('MyTxtObj', 'someregex<placeholder:someotherregex>')
+
+
+
+
+
 
 
 
