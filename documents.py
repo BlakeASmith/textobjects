@@ -89,54 +89,6 @@ class Page(StructuredText, collections.abc.MutableSequence):
         # for i, obj in enumerate(_sorted):
             # self[i] = obj
 
-class ChainSequence(collections.abc.MutableSequence):
-    """Treat a group of MutableSequence as a single Sequence"""
-
-    def __init__(self, *sequences):
-        self.sequences = sequences
-
-    def __convert_key(self, key):
-        if key < 0:
-            raise NotImplementedError('negitive indexing not supported')
-        end = 0
-        for seq in self.sequences:
-            end += len(seq)
-            
-            if key < end:
-                return key-end, seq
-        raise KeyError(key)
-
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            return islice(self, key.start, key.stop, key.step)
-        conkey, seq = self.__convert_key(key)
-        return seq[conkey]
-
-    def __setitem__(self, key, value):
-        conkey, seq = self.__convert_key(key)
-        seq[conkey] = value
-
-    def __delitem__(self, key):
-        conkey, seq = self.__convert_key(key)
-        del seq[conkey]
-
-    def insert(self, index, value):
-        if index < len(self):
-            conkey, seq = self.__convert_key(index)
-            seq.insert(conkey, value)
-        else:
-            self.sequences[-1].append(value)
-
-    def __len__(self):
-        return sum([len(s) for s in self.sequences])
-
-    def __iter__(self):
-        return chain(*self.sequences)
-
-    def sort(self, *args, **kwargs):
-        _sorted = sorted(self, *args, **kwargs)
-        for i, it in enumerate(self):
-            self[i] = _sorted[i]
 
 class Document(ChainSequence):
     """A set of TextObjects across multiple :class:`Page`"""

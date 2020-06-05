@@ -50,6 +50,9 @@ class StructuredText(TextObject, UserString):
     def __radd__(self, other):
         return str(self) + str(other)
 
+    def __getitem__(self, key):
+        return str(self)[key]
+
 class ListTextObject(TextObject, UserList): 
     """A TextObject which is also a list"""
     ...

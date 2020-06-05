@@ -11,7 +11,7 @@ from typing import Tuple, Mapping, Sequence
 from functools import wraps
 from copy import deepcopy
 from itertools import takewhile, dropwhile
-
+from concurrent.futures import ThreadPoolExecutor
 
 @dataclass
 class Context:
@@ -51,23 +51,7 @@ class Context:
         ctx = cls(enclosing, text, last.start(), scope=scope)
         return ctx
 
-def textobject(name, rt):
-    """create a StructuredText subclass from the
-    given node's :func:`execute(ctx)` method
-
-    Args:
-        name (str): the name of the class
-        rt (nodes.PatternNode): the root node 
-    
-    Returns:
-        (StructuredText) a StructuredText subclass with the same 
-        attributes as the result from :func:`rt.evaluate`. it will
-        also have an attribute `context` which is the execution context
-        returned from :func:`rt.evaluate`
-
-    """
-    if not name:
-        name = 'SomeTextObject'
+def maketextobject(name, rt):
     class Temp(StructuredText):
         def __new__(cls, text):
             return cls.__match__(text)
@@ -100,11 +84,6 @@ def textobject(name, rt):
                 except TemplateMatchError:...
             raise TemplateMatchError(ctx)
 
-        #TODO: {item<.+>}$')
-
-
-
-
         @classmethod
         def __findall__(cls, text, enclosing=None, scope={}):
             if not enclosing:
@@ -112,18 +91,39 @@ def textobject(name, rt):
             first = rt.firstexpression
             prospects = first.finditer(text)
             results = []
-            for prospect in prospects:
+            def eval_prospect(prospect):
                 try:
                     ctx, result = rt.evaluate(Context.enclosing(
                         text[prospect.start(0):], enclosing, scope=scope))
                     result.matches = ctx.matches
                     result.matchdict = ctx.matchdict
-                    results.append(result)
-                except TemplateMatchError: ...
-            return results
+                    return result
+                except: ...
+            with ThreadPoolExecutor() as executor:
+                found = executor.map(eval_prospect, prospects)
+            return [it for it in found if it]
 
     Temp.__name__ = Temp.__qualname__ = name
     return Temp
+
+def textobject(name, rt):
+    """create a StructuredText subclass from the
+    given node's :func:`execute(ctx)` method
+
+    Args:
+        name (str): the name of the class
+        rt (nodes.PatternNode): the root node 
+    
+    Returns:
+        (StructuredText) a StructuredText subclass with the same 
+        attributes as the result from :func:`rt.evaluate`. it will
+        also have an attribute `context` which is the execution context
+        returned from :func:`rt.evaluate`
+
+    """
+    if not name:
+        name = 'SomeTextObject'
+    return maketextobject(name, rt)
 
 class PatternNode(NodeMixin):
     """The base node of the template parser
