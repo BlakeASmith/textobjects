@@ -99,6 +99,24 @@ def evaluate(template: str, **options):
     return wrapper
 
 if __name__ == '__main__':
-    fun = evaluate('TODO: {item}')
-    print(fun('TODO:  item1 item2 [clearly [not an item] [item3]'))
-    
+    fun #TODO: 7', '
+
+
+
+DO: foobar',
+#TODO:#TODO: {item<.+>}$')
+
+
+{item}')
+
+
+tem}')
+)
+
+---/home/larbs/projects/python/capture/textobjects/docsrc/template.py-------------------------------TODO: probably will
+
+
+#TODO: 7', '
+
+
+', '

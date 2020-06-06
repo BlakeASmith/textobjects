@@ -52,26 +52,36 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
         return len(self.entries())
     
     def __getitem__(self, key):
-        print(key)
         if isinstance(key, int):
             return list(self.entries())[key]
         else:
             return self.entries().keys()[key]
 
     def __setitem__(self, key, value):
-            obj = self[index]
+            if True not in [isinstance(value, typ) for typ in self.txtobjtypes]:
+                changed = False
+                for typ in self.txtobjtypes:
+                    try:
+                        value = typ(text=item)
+                        changed = True
+                    except:
+                        pass
+                if not changed:
+                    raise ValueError(f'{item} is not in a supported format')
+            obj = self[key]
             (typ, path) = self.entries()[obj]
             start, end = obj.span
             text = path.read_text()
-            text = text[:start] + item + text[end:]
+            text = text[:start] + value + text[end:]
             path.write_text(text)
+            self.update()
     
     def __delitem__(self, key):
             obj = self[key]
-            typ, path = self.entries(False)[obj]
+            typ, path = self.entries()[obj]
             start, end = obj.span
             text = path.read_text()
-            text = text[:start] + text[end:]
+            text = text[:start] + text[end:].lstrip('\n')
             path.write_text(text)
             self.update()
 
@@ -98,7 +108,7 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             path.write_text(text)
         elif index == len(self):
             with self.primaryfile.open('a') as pf:
-                pf.write(str(item)+'\n')
+                pf.write(str(item).strip('\n') + '\n')
         else:
             raise IndexError('index must not exceed len() {len(self)}')
         self.update()
@@ -148,6 +158,19 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
                 obs.on_textobject_added(txtobj, *new[txtobj])
 
 class TextObjectDirectoryTree(TextObjectStorage):
+    """A TextObjectStorage spanning a directory structure
+
+    Args:
+        txtobjtypes (List[TextObject]): The TextObject subclasses which will be considered
+        writefile (str): The path to the file which newly added items will be written to.
+            it can be any file and entries will be placed at the end of the file. If the file
+            does not exist a new one will be created
+        root (str): Path to the root directory 
+        glob (str): the glob pattern to look for within the root directory 
+        recursive (bool): if true subdirectories will be considered recursivly, equivelant to 
+            prepending **/ to the glob
+
+    """
     def __init__(self, txtobjtypes, writefile, root, glob, recursive=False):
         self.txtobjtypes = txtobjtypes
         self.primaryfile = Path(writefile)

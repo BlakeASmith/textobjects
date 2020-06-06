@@ -1,197 +1,204 @@
 ====================================================
 
-**textobjects** is a python module for reading arbitrary
-structured data from text
+.. docs: https://blakeasmith.github.io/textobjects/
 
-Often we want to store some data programmatically, but we also need 
-that data to be presented in a human readable way. There are many 
-formats such as json or csv, but these may 
-not always be sufficient in terms of readability. 
+**textobjects** is a python module for modelling arbitrary
+patterns in plain text as structured data
 
-Other times the data format is out of our control
-but we'd still like to read that text as structured data. This
-is exactly what **textobjects** is for!
+**textobjects** provides a simple templating language to define 
+structured text. It can be used as a simpler alternative to 
+Regular Expressions with named groups, but also has advanced features 
+such as, python & shell interpolation, substitution & composition of 
+textobjects, and wildcard modifiers.
 
-you can see the full docs here https://blakeasmith.github.io/textobjects/
+You can see the full docs here https://blakeasmith.github.io/textobjects/
 
 Template Syntax
 _____________________________________
 
 **textobjects** uses a template syntax to identify a text object:
 
-        :Placeholders: any identifier surrounded by **{ }** represents a placeholder.
-                adding a placeholder creates an attribute on the textobject
+        :Placeholders: any identifier surrounded by **< >** represents a placeholder.
+                Adding a placeholder creates an attribute on the textobject
                 which will be set to the text which was found in that position.
 
-        * by default a placeholder will match a single whitespace delimited word
+        * by default a placeholder will match up until the next whitespace character 
 
-        * you can change the matching behavior by including a **<regex>** tag.
+        * you can change the matching behavior by including a **regex** as part of the placeholder, preceded by a ':".
 
 
         .. code-block:: python
                 
-                "{varname<regex>}" # `varname` is the name for the capture attribute
+                "<varname:regex>" # `varname` is the name for the capture attribute
                                  # `regex` is a regular expression to match
 
         :Inline Regular Expressions: you can put any regular expression in the template string
                 which is supported by python's `re module <https://docs.python.org/2/library/re.html>`_.
-                this will affect which strings will match the template, but will not capture any data.
+                This will affect which strings will match the template, but will not capture any data.
 
         .. code-block:: python
                 
-                "^{name<[a-z]>}$" # matches a single lowercase word on it's own line
+                "TODO: <item:.*> $" # matches the literal characters 'TODO: ' followed by any text up until the end of the text
 
 
-        :Wildcards: any symbols placed between the **<regex>** tag and the placeholder identifier are interpreted 
-                as **Wildcards** which change the matching behavior 
+        :Wildcards: Wildcard (modifier) symbols can be added to the placeholder to change the matching behavior, the next 
+                    section describes which wildcards are available.
 
 
         .. code-block:: python
 
-                "{varname<regex>/?}" # here `/` and `?` are wildcards
-                "{varname/?}" # this is also valid 
+                "<varname:regex:/?>" # here `/` and `?` are wildcards
+                "<varname/?>" # this is also valid 
 
 Wildcards
 ________________________________________
 
 
-        :Optional Placeholders (?): the **?** wildcard designates an *optional placeholder*. If the placeholder
+        :Optional Placeholders (?): the **?** Wildcard designates an *optional placeholder*. If the placeholder
                 does not match it will be ignored.
 
 
         :Repeat Match (!): **!** signifies a repeating match. The placeholder will be matched 
-                repeadtedly until there is some text which it does not match. The resulting matches
+                repeatedly until there is some text which it does not match. The resulting matches
                 will be stored as an attribute with the placeholder name on the text object.
                 To match only a limited number of times you can add a number **n** after the wildcards
                 in the placeholder.
                                
                 .. code-block:: python
 
-                        "{varname<regex>!n}"
+                        "<varname:regex:!:n}"
 
-                * the repeat syntax also works with regular placeholders **{varname!n}**... 
-
-                * you can also use **~!** which will search for each occurance of the pattern and ignore any 
+                * you can also use **/!** which will search for each occurrence of the pattern and ignore any 
                   non-matching text in between
 
         :Embedding template strings: you can also use template string syntax within a placeholder expression.
 
                 .. code-block:: python
                         
-                        "{placeholder<{inner1} {inner2}>}"
+                        "<placeholder:<inner1> <inner2>>"
 
-                the resulting object will have an attribute called `placeholder` which is a an
+                The resulting object will have an attribute called `placeholder` which is an 
                 object with attributes `inner1` and `inner2`
 
+Python & Shell Interpolation
+_________________________________________
 
-.. _Examples:
+*Python* and *Shell Commands* can be interpolated within a textobject template.
+This is useful for when some logic is required while the text is being processed, or
+you want to perform some transformation on the data of a placeholder which depends on 
+the surrounding text.
 
-Examples
-====================================================================
+Python Interpolation
+_________________________________________
 
-Basic Usage
-_____________________________________
-
-
-Suppose we want to pull all of the 'TODO:' lines out of our source files
-
-let's create a textobject representing a TODO:
-
->>> from textobjects import textobject
-                
->>> ToDo = textobject('ToDo', 'TODO: {item<.*>$}')
-<class ToDo>
-
-This will take everything after the text "TODO: " as being the 
-todo item. 
-
-Then we can create one like this:
-
->>> todo = ToDo("TODO: make a new todo")
-"make a new todo"
-
-but not like this, since this won't match the template
-
-Now let's pull all the TODO: lines out of a file::
-
-        TODO: this is a todo
-        TODO: this is another one
-        TODO: this is a different one
-
->>> from pathlib import Path
->>> ToDo.findall(Path('myfile.txt').read_text())
-['TODO: this is a todo', 'TODO: this is another one', 'TODO: this is a different one']
-
-We can access the file (or a set of files) as a collection using :class:`storage.TextObjectStorage`
+Python code can be included in the textobject template as follows:
 
 .. code-block:: python
 
-        from textobjects import storage
-        store = storage.TextObjectStorage([ToDo], 'myfile.txt')
+        "`! print('this is python code')`"
 
-:class:`storage.TextObjectStorage` implements all functions of a MutableSequence, so we can read and
-modify the file as follows:
-
->>> for todo in store: print(todo)
-TODO: this is a todo
-TODO: this is another one
-TODO: this is a different one
-
->>> print(store)
-['TODO: this is a todo', 'TODO: this is another one', 'TODO: this is a different one']
-
->>> store += ['TODO: new todo']
-['TODO: this is a todo', 'TODO: this is another one', 'TODO: this is a different one', 'TODO: new todo']
-
->>> del store[0]
-None
-
->>> print(store)
-['TODO: this is another one', 'TODO: this is a different one', 'TODO: new todo']
-
->>> store.clear()
-None
-
->>> print(store)
-[]
-
-
-To monitor changes to textobjects in the file:
+To store the result of a python expression in a variable on the textobject you can do 
+the following:
 
 .. code-block:: python
 
-        class MyObserver(storage.TextObjectObserver):
-            def on_textobject_added(self, txtobj):
-                print(txtobj, 'was added')
-            def on_textobject_removed(self, txtobj):
-                print(txtobj, 'was removed')
-            def on_textobject_moved(self, txtobj):
-                print(txtobj, 'was moved')
+        "<placeholder:`! rv = 'store this as a variable called placeholder'`>"
 
-        store.subscribe(MyObserver())
+Here **rv** (short for return value) is a variable provided in the scope of the python interpolation block.
+The attribute produced by the placeholder will be overridden by the value of **rv**. If **rv** is **None** then 
+the text matched within the placeholder will be stored as normal.
 
-Now the appropriate methods of :obj:`MyObserver()` will be called when
-an item is added, removed, or moved within the storage.
+Other variables available within the scope are:
 
-Additionally we can monitor changes which occur in the storage files by using :func:`storage.sync`
+:context: this is the evaluation context which is passed along as the text is being evaluated. This can be used
+          to see which part of the text is currently being considered as well as what the outer/enclosing text is.
+          You can also use this to advance the text as necessary by adding to the *ind* variable. See :class:`Context`
+          in the docs_.
 
-.. code-block:: python
+:attrs: This is a dictionary (empty) in which you can put attributes that should be 
+        stored on the resulting textobject. Use this to add multiple attributes within 
+        one block.
 
-        with storage.sync(store):
-           some_process()
+:av_text: The remaining portion of the text that has not yet been processed.
 
-Now, while the :func:`some_process()` is executing, the :class:`TextObjectStorage` will be
-updated any time the associated files are modified. This means that the methods of 
-:ob:`MyObserver()` will be called even if the textobject was added/removed/moved in the
-file by some outside proccess.
+:types: A list containing any other types of TextObject which have been defined in your program.
 
-Alternitivley we can use :func:`storage.watch`
+Additionally, a **scope** parameter (dictionary) can be supplied when creating a textobject. 
+Any items within that dictionary will be available in the scope of the python block.
 
 .. code-block:: python
 
-        stop = storage.watch(store)
-        some_process()
-        stop()
+        myvar = "some var"
+        VarSub = textobjects.create('VarSub', '<myvar:someregex`!attrs["myvar"]=myvar`>', scope=locals())
+
+Now every instance of :class:`VarSub` will have an attribute *myvar* equal to "some var"
+
+>>> txtobj = textobject.match(VarSub, "someregex")
+>>> txtobj.myvar
+"some var"
+>>> txtobj
+"someregex"
+
+
+Shell Interpolation
+______________________________
+
+Shell commands can be added in the template as follows::
+
+.. code-block:: python
+
+        "`sh some_shell_command`" 
+
+If the shell block is put within a placeholder then the value stored
+for the placeholder will be output (to stdout) of the shell command.
+
+
+Composition of textobjects
+________________________________
+
+Textobjects can be composed as follows
+
+.. code-block:: python
+
+        def parse_date(text):
+                ...
+
+        T1 = textobjects.create('T1', '<words:\w+\s*:!>')
+        T2 = textobjects.create('T2', '`T1`:date:<date:`!rv = parse_date(av_text)`>', scope={'parse_date':parse_date})
+
+Here *T2* is a textobject which will match and store any number of words up until ':date:'
+and parse out a date from the text following ':date:', putting it in an attribute called date.
+
+
+>>> txtobj = textobjects.match(T2, "some words here :date: 11/12/2018")
+>>> txtobj.date
+"11/12/2018"
+>>> txtobj.words
+["some ", "words ", "here "]
+>>> txtobj
+"some words here :date: 11/12/2018"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

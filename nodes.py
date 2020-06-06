@@ -1,14 +1,17 @@
 import re
 import os
-from placeholders import *
+from textobjects.placeholders import *
+from textobjects.textobject import TextObject, StructuredText, ListTextObject, textobjecttypes
+from textobjects.exceptions import TemplateMatchError
 from collections import UserString, UserList
 from anytree import RenderTree, NodeMixin
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Tuple, Mapping
+from dataclasses import dataclass, field
+from typing import Tuple, Mapping, Sequence
 from functools import wraps
 from copy import deepcopy
 from itertools import takewhile, dropwhile
+from concurrent.futures import ThreadPoolExecutor
 
 @dataclass
 class Context:
@@ -19,12 +22,17 @@ class Context:
     """text which has been read but not consumed, use this if you want to match against some 
     text, but some other placeholder or block later in the template string can still reference it"""
     index: int
-    """the current index in the text which is being considered. This should be updated every time some part
-    of the text is matched"""
-    matches = []
-    """The list of matches which have been discovered so far, they must either be strings, TextObject, or some other
+    """the current index in the text which is being considered. This 
+    should be updated every time some partof the text is matched"""
+
+    scope: Mapping 
+    """The outer scope provded for python interpolation"""
+
+    matches: Sequence = field(default_factory=lambda: [])
+    """The list of matches which have been discovered so far, 
+    they must either be strings, TextObject, or some other
     subclass of str. These are used in numerical backreferences like \1"""
-    matchdict = {}
+    matchdict: Mapping = field(default_factory=lambda: {})
     """mapping of placeholder names to their matched values, used for placeholder backreferencing \<name>"""
 
     @property
@@ -33,55 +41,70 @@ class Context:
         return self.fulltext[self.index:]
 
     @classmethod
-    def default(cls, text:str):
+    def default(cls, text:str, scope={}):
         """applys defaut values for each attribute of :class:`Context` based on the given text"""
-        return cls(text, text, 0)
-
-@dataclass
-class TextObject:
-    """Base class for a TextObject"""
-    data: str = None
-    """The main value of the TextObject"""
-    enclosing_text: str = None
-    """The text which the TextObject is contained in"""
-    start: int = None
-    """the index within the `enclosing_text` at which the `data` starts"""
-    end: int = None
-    """the index within the `enclosing_text` at which the `data` ends"""
-    others = []
-    """items which were found while matching the TextObject, but are not named"""
+        return cls(text, text, 0, scope=scope)
 
     @classmethod
-    def from_regex_match(cls, match, ctx):
-        """create a TextObject based on a :obj:`re.MatchObject`"""
-        txtobj = cls(match.group(0), ctx.fulltext, ctx.index, ctx.index + match.end(0))
-        txtobj.matchobject = match
-        return txtobj
+    def enclosing(cls, text, enclosing, scope={}):
+        last = list(re.finditer(re.escape(text), enclosing, re.M))[-1]
+        ctx = cls(enclosing, text, last.start(), scope=scope)
+        return ctx
 
-    @classmethod
-    def from_context(cls, ctx):
-        """create a TextObject based on a :class:`Context` object"""
-        txtobj = TextObject(ctx.text, ctx.fulltext, 
-                ctx.index, len(ctx.fulltext))
-        txtobj.__class__ = cls
-        return txtobj
-        
-class StructuredText(TextObject, UserString): 
-    """A TextObject which is also a string"""
-    ...
+def maketextobject(name, rt):
+    class Temp(StructuredText):
+        def __new__(cls, text):
+            return cls.__match__(text)
 
-class ListTextObject(TextObject, UserList): 
-    """A TextObject which is also a list"""
-    ...
+        @classmethod
+        def __match__(cls, text, enclosing=None, scope={}):
+            if not enclosing:
+                enclosing = text
+            context = Context.enclosing(text, enclosing, scope=scope)
+            _, result = rt.evaluate(context)
+            result.matches = context.matches
+            result.matchdict = context.matchdict
+            return result
 
-def textobjecttypes(cls=TextObject):
-    """returns a mapping from class names to classes for all 
-    subclasses of TextObject"""
-    classes = {}
-    for subcls in cls.__subclasses__():
-        classes.update(textobjecttypes(subcls))
-        classes[subcls.__name__] = subcls
-    return classes
+        @classmethod
+        def __search__(cls, text, enclosing=None, scope={}):
+            if not enclosing:
+                enclosing = text
+            first = rt.firstexpression
+            prospects = first.finditer(text)
+            ctx = None
+            for prospect in prospects:
+                try:
+                    ctx, result = rt.evaluate(Context.enclosing(
+                        text[prospect.start(0):], enclosing, scope=scope))
+                    result.matches = ctx.matches
+                    result.matchdict = ctx.matchdict
+
+                    return result
+                except TemplateMatchError:...
+            raise TemplateMatchError(ctx)
+
+        @classmethod
+        def __findall__(cls, text, enclosing=None, scope={}):
+            if not enclosing:
+                enclosing = text
+            first = rt.firstexpression
+            prospects = first.finditer(text)
+            results = []
+            def eval_prospect(prospect):
+                try:
+                    ctx, result = rt.evaluate(Context.enclosing(
+                        text[prospect.start(0):], enclosing, scope=scope))
+                    result.matches = ctx.matches
+                    result.matchdict = ctx.matchdict
+                    return result
+                except: ...
+            with ThreadPoolExecutor() as executor:
+                found = executor.map(eval_prospect, prospects)
+            return [it for it in found if it]
+
+    Temp.__name__ = Temp.__qualname__ = name
+    return Temp
 
 def textobject(name, rt):
     """create a StructuredText subclass from the
@@ -100,15 +123,7 @@ def textobject(name, rt):
     """
     if not name:
         name = 'SomeTextObject'
-    class Temp(StructuredText):
-        def __init__(self, text):
-            ctx, result = rt.evaluate(Context.default(text))
-            self.context = ctx
-            for k, v in vars(result).items():
-                setattr(self, k, v)
-
-    Temp.__name__ = Temp.__qualname__ = name
-    return Temp
+    return maketextobject(name, rt)
 
 class PatternNode(NodeMixin):
     """The base node of the template parser
@@ -139,6 +154,29 @@ class PatternNode(NodeMixin):
         """produce a StructuredText subclass based on this nodes :func:`evaluate` method"""
         return textobject(self.name, self)
 
+    @property
+    def firstexpression(self):
+        for child in self.children:
+            if hasattr(child, 'expression'):
+                return child.expression
+            return child.firstexpression
+
+    def nextexpression(self, invoked_from=None):
+
+        try:
+            if self.children:
+                for child in list(dropwhile(lambda it: it != invoked_from, self.children))[1:]:
+                    if child.children:
+                        return child.nextexpression(self)
+                    if hasattr(child, 'expression'):
+                        return child.expression
+        except KeyError: pass
+
+        if not self.parent:
+            return self.expression
+
+        return self.parent.nextexpression(self)
+
     def lookahead(self, pattern, invoked_from=None):
         """add a lookahead to the given pattern for the next regex expression in the template"""
         try:
@@ -147,11 +185,12 @@ class PatternNode(NodeMixin):
                     if child.children:
                         return child.lookahead(pattern)
                     if hasattr(child, 'expression'):
-                        return f'{pattern}(?={child.expression})'
+                        pattern_str = pattern if isinstance(pattern, str) else pattern.pattern
+                        return re.compile(f'{pattern_str}(?={child.expression.pattern})', re.M)
         except KeyError: pass
 
         if not self.parent:
-            return pattern
+            return re.compile(pattern, re.M) if isinstance(pattern, str) else pattern
 
         return self.parent.lookahead(pattern, self)
 
@@ -163,6 +202,7 @@ class PatternNode(NodeMixin):
             as an attribute on the StructuredText instance
 
             if the child node does not have a name and returns a dict, then each key, 
+
             value pair of the dict will be added as an attribute on the StructuredText instance
         """
 
@@ -171,19 +211,23 @@ class PatternNode(NodeMixin):
         results = {}
         for node in self.children:
             if node.name:
-                ctx, subobj = node.evaluate(ctx)
+                subctx, subobj = node.evaluate(ctx)
                 results[node.name] = subobj
                 if subobj:
-                    subobj.__class__ = node.textobjectclass
+                    if isinstance(subobj, StructuredText):
+                        subobj.__class__ = node.textobjectclass
                 ctx.matchdict[node.name] = subobj
             else:
-                ctx, subobj = node.evaluate(ctx)
+                subctx, subobj = node.evaluate(ctx)
                 txtobj.others.append(subobj)
                 if isinstance(subobj, Mapping):
                     results.update(subobj)
             ctx.matches.append(subobj)
 
         txtobj.__dict__.update(results)
+
+        txtobj.end = ctx.index
+        txtobj.data = ctx.fulltext[txtobj.start:txtobj.end]
 
         return (ctx, txtobj)
 
@@ -274,7 +318,6 @@ class SearchNode(PatternNode):
     or all the child nodes have succeeeded"""
     def evaluate(self, ctx):
         txtobj = self.textobjectclass.from_context(ctx)
-        results = {}
         while ctx.index < len(ctx.fulltext):
             try:
                 for child in self.children:
@@ -311,71 +354,104 @@ class EitherNode(PatternNode):
             except: ...
         raise ValueError('None of the patterns matched')
 
-def python_interpolation(expr, ctx):
+def python_interpolation(expr, ctx, available_text):
     """set up the python interpolation enviroment and execute the given code
-
     Args:
         expr (str): the python code to execute
         ctx (Context): the current execution context
 
     Returns:
-        (Context) the updated context
+        (Context, Mapping) the updated context and the updated scope
     """
-    globs = {'context':ctx, 'types':textobjecttypes()}
-    exec(expr[1:].strip(), None, globs)
-    return ctx
+    globs = {
+            'context':ctx, 
+            'types':textobjecttypes(),
+            'rv':None,
+            'attrs':{},
+            'av_text': available_text
+    }
+    globs.update(ctx.scope)
+    if expr[0] == '!':
+        exec(expr[1:].strip(), None, globs)
+    elif expr[0] == '=':
+        globs['rv'] = eval(expr[1:].strip(), None, globs)
+    return ctx, globs['attrs'], globs['rv']
 
 def shell_interpolation(expr, ctx):
     """execute the given expression as a shell command, 
-    not exactly sure what to do with this yet, TODO: probably will 
-    store the result as a attribte on the TextObject """
+    not exactly sure what to do with this yetTODO: probably will
+l
+ 
+  #TODO: 7', '
+as a attribte on the TextObject """
     stdout = os.popen(expr).read()
+    return stdout
 
 class RegexNode(PatternNode):
     """A PatternNode based on a regular expression"""
     def __init__(self, name, expression, parent=None, children=[]):
         super(RegexNode, self).__init__(name, parent, children)
-        self.expression = expression
+        self.expression = re.compile(expression, re.M)
 
 class SubstitutionNode(RegexNode):
     """apply any substitution blocks from a template string, this includes
     interpolation, TextObject substitution, and variable substitution (TODO:)"""
     def __init__(self, name, expresson, substitutions, parent=None, children=[]):
-        super(SubstitutionNode, self).__init__(name, parent, children)
         self._expresson = expresson
-        self.expresson = takewhile(lambda it: it != '`', expresson)
+        firstexpresson = takewhile(lambda it: it != '`', expresson)
+        firstexpresson = ''.join(firstexpresson)
+        super(SubstitutionNode, self).__init__(name, firstexpresson,  parent, children)
         self.substitutions = substitutions
 
     def evaluate(self, ctx):
+        txtobj = StructuredText.from_context(ctx)
         exprs = re.split('`', self._expresson)
         exprs = [expr for expr in exprs if expr]
         classnames = [sub.strip('`') for sub in self.substitutions]
-        results = []
+        attrs = {}
+        returnvalue=None
         for i, expr in enumerate(exprs):
             if expr in classnames and expr in textobjecttypes():
                 obj = textobjecttypes()[expr](ctx.text)
                 ctx = obj.context
                 results.append(obj)
-            elif expr.startswith('!'):
-                ctx = python_interpolation(expr, ctx)
+            elif expr.startswith('!') or expr.startswith('='):
+                available = self.lookahead('.*').match(ctx.text)
+                ctx, subattrs, rv = python_interpolation(expr, ctx, available)
+                attrs.update(subattrs)
+                returnvalue = rv
             elif expr.startswith('sh'):
-                shell_interpolation(expr[2:].strip(), ctx)
+                attrname = re.search('(\w+)=', expr)
+                attrs[attrname.group(1)] = shell_interpolation(expr[attrname.end(0):].strip(), ctx)
             else:
-                self.expresson = expr
-                with_lookahead = self.lookahead(expr)
-                match = re.match(with_lookahead, ctx.text)
+                self.expresson = re.compile(expr, re.M)
+                #TODO: lookahead for expressions
+                with_lookahead = self.lookahead(self.expresson)
+                match = with_lookahead.match(ctx.text)
+                if not match:
+                    raise TemplateMatchError(ctx, f'{with_lookahead} does not match {ctx.text}')
                 ctx.index += len(match.group(0))
 
-        if len(results) == 1:
-            return ctx, results[0]
+        txtobj.end = ctx.index
+        txtobj.data = ctx.fulltext[txtobj.start:txtobj.end]
 
-        return ctx, {'subobjects':results}
+        if returnvalue:
+            return ctx, returnvalue
+
+        # if len(attrs) == 1:
+            # return ctx, list(attrs.values())[0]
+
+        txtobj.__dict__.update(attrs)
+
+        return ctx, txtobj
 
 class RegexMatchNode(RegexNode):
     """match the current text to the given expression and
     create a StructuredText from the result"""
     def evaluate(self, ctx: Context):
-        match = re.match(self.lookahead(self.expression), ctx.text)
+        match = self.lookahead(self.expression).match(ctx.text)
+        if not match:
+            raise TemplateMatchError(ctx)
         txtobj = StructuredText.from_regex_match(match, ctx)
         txtobj.__class__ = self.textobjectclass
         ctx.index = ctx.index + len(txtobj)
@@ -385,12 +461,12 @@ class RegexSearchNode(RegexNode):
     """search the current text for the given expression and
     create a StructuredText from the result"""
     def evaluate(self, ctx: Context):
-        match = re.search(self.lookahead(self.expression), ctx.text)
+        match = self.lookahead(self.expression).search(ctx.text)
+        if not match:
+            raise TemplateMatchError(ctx)
         txtobj = StructuredText.from_regex_match(match, ctx)
         txtobj.__class__ = self.textobjectclass
         text = ctx.fulltext[ctx.index:]
         ctx.index = ctx.index + len(txtobj)
         return (ctx, txtobj)
-
-
 
