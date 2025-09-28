@@ -6,8 +6,11 @@ from textobjects.placeholders import *
 from textobjects.typedef import EvaluationContext, ExecutionContext, TemplateMatchError, Options
 from typing import Pattern
 from types import SimpleNamespace
-from functools import wraps
+from functools import wraps, lru_cache
 from dataclasses import dataclass, replace
+
+# Global regex pattern cache to avoid repeated compilation
+_regex_cache = {}
 
 def parse_placeholder(placeholder:str, parent=None, options=Options()):
     """extract name, expression, and wildcards from the text of a placeholder
@@ -33,7 +36,11 @@ def parse_placeholder(placeholder:str, parent=None, options=Options()):
 
 def __addpattern(pattern, lst, *flags, placeholder=None):
     if pattern:
-        lst.append((placeholder, re.compile(pattern, *flags)))
+        # Use cached regex compilation
+        cache_key = (pattern, flags)
+        if cache_key not in _regex_cache:
+            _regex_cache[cache_key] = re.compile(pattern, *flags)
+        lst.append((placeholder, _regex_cache[cache_key]))
 
 def parse(template, parent=None, options=Options()):
     """produce a list of Patterns associated with the
@@ -47,24 +54,36 @@ def parse(template, parent=None, options=Options()):
     (ParsedTemplate):
         each Placeholder in the template assocated to it's pattern"""
     flags = options.re_flags
-    rstack, pstack, results = [0], [], []
-    for i, c in enumerate(template):
-        if c == PLACEHOLDER_START:
-            if not pstack:
-                __addpattern(template[rstack.pop():i], results, *flags)
-            pstack.append(i)
-        if c == PLACEHOLDER_END:
-            start = pstack.pop()
-            if not pstack:
-                placeholder = template[start:i+1]
-                parsed = parse_placeholder(placeholder, options)
-                if PLACEHOLDER_START in parsed.subexpr:
-                    results.append((parsed, parse(parsed.subexpr, parsed)))
-                else:
-                    __addpattern(parsed.subexpr, results, *flags, placeholder=parsed)
-            rstack.append(i+1)
-
-    __addpattern(template[rstack.pop():], results, *flags)
+    results = []
+    
+    # Use regex-based parsing instead of character-by-character
+    # Find all placeholders using regex
+    placeholder_pattern = re.compile(r'<[^>]*>')
+    last_end = 0
+    
+    for match in placeholder_pattern.finditer(template):
+        # Add text before placeholder
+        if match.start() > last_end:
+            text_before = template[last_end:match.start()]
+            if text_before:
+                __addpattern(text_before, results, *flags)
+        
+        # Process placeholder
+        placeholder = match.group(0)
+        parsed = parse_placeholder(placeholder, options)
+        if PLACEHOLDER_START in parsed.subexpr:
+            results.append((parsed, parse(parsed.subexpr, parsed)))
+        else:
+            __addpattern(parsed.subexpr, results, *flags, placeholder=parsed)
+        
+        last_end = match.end()
+    
+    # Add remaining text
+    if last_end < len(template):
+        remaining_text = template[last_end:]
+        if remaining_text:
+            __addpattern(remaining_text, results, *flags)
+    
     return results
 
 
@@ -74,7 +93,11 @@ def __adjust_by_future(parsedtemplate, options):
             if isinstance(pattern, Pattern):
                 loosews = re.sub('\s+', re.escape('\s+'), pattern.pattern)
                 loosews = loosews.replace('\\s\+', '\s+')
-                pattern = re.compile(loosews, *options.re_flags)
+                # Use cached compilation
+                cache_key = (loosews, options.re_flags)
+                if cache_key not in _regex_cache:
+                    _regex_cache[cache_key] = re.compile(loosews, *options.re_flags)
+                pattern = _regex_cache[cache_key]
                 parsedtemplate[i] = (placeholder, pattern)
 
     for i, (placeholder, pattern) in enumerate(parsedtemplate[:-1]):
@@ -85,7 +108,12 @@ def __adjust_by_future(parsedtemplate, options):
                 patt = parsedtemplate[i+1][1].pattern
                 if not re.search('\(\?=.*\)$', pattern.pattern):
                     lookahead = f'(?={patt})'
-                    newpatt = re.compile(pattern.pattern+lookahead, *options.re_flags)
+                    new_pattern = pattern.pattern + lookahead
+                    # Use cached compilation
+                    cache_key = (new_pattern, options.re_flags)
+                    if cache_key not in _regex_cache:
+                        _regex_cache[cache_key] = re.compile(new_pattern, *options.re_flags)
+                    newpatt = _regex_cache[cache_key]
                     parsedtemplate[i] = (placeholder, newpatt)
 
     return parsedtemplate

@@ -100,20 +100,39 @@ class Page(PageView, _collections.abc.MutableSequence):
     def write(self):
         """apply the changes in this collection to the text, subsituting each of the values
         with it's associated new value"""
+        import io
+        
         objects = self._search_text()
-        offset = 0
         while len(objects) > len(self): # items were removed
             self.insert(0, None) 
+        
+        # Use StringBuilder pattern for efficient string building
+        result_parts = []
+        current_pos = 0
+        
         for old, new in zip(objects, self):
             if not new:
                 new = ''
-            self.data = self.data[:old.start+offset] \
-                + str(new) + self.data[old.end+offset:]
-            offset += len(new) - len(old)
+            
+            # Add text before this object
+            if current_pos < old.start:
+                result_parts.append(self.data[current_pos:old.start])
+            
+            # Add the new content
+            result_parts.append(str(new))
+            current_pos = old.end
+        
+        # Add remaining text
+        if current_pos < len(self.data):
+            result_parts.append(self.data[current_pos:])
+        
+        # Handle added items
         j = len(objects)
         while j < len(self): # items were added
-            self.text = self.text.strip() + '\n' + str(self[j])
+            result_parts.append('\n' + str(self[j]))
             j += 1
+        
+        self.data = ''.join(result_parts)
 
 class PageMap(_collections.abc.MutableMapping):
     """A map interface for a Page

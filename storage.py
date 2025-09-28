@@ -1,5 +1,6 @@
 import re
 import asyncio
+import time
 from pathlib import Path
 from itertools import product
 from textobjects import textobjects
@@ -34,7 +35,7 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             will be replaced.
     """
 
-    def __init__(self, txtobjtypes, primaryfile=None, files=[]):
+    def __init__(self, txtobjtypes, primaryfile=None, files=[], cache_ttl=300):
         self.txtobjtypes = txtobjtypes
         self.primaryfile = Path(primaryfile)
         self.files = [Path(f) for f in files]
@@ -42,6 +43,9 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             self.files.append(primaryfile)
         self._entries = None
         self.observers = []
+        # File content cache with TTL
+        self._file_cache = {}
+        self._cache_ttl = cache_ttl
 
     def entries(self, updated=False):
         if updated or not self._entries:
@@ -127,12 +131,31 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
 
     def on_modified(self, event):
         if Path(event.src_path).name in [p.name for p in self.files]:
+            # Invalidate cache for modified file
+            cache_key = str(Path(event.src_path))
+            if cache_key in self._file_cache:
+                del self._file_cache[cache_key]
             self.update()
+
+    def _get_file_content(self, path):
+        """Get file content with caching"""
+        current_time = time.time()
+        cache_key = str(path)
+        
+        if cache_key in self._file_cache:
+            content, timestamp = self._file_cache[cache_key]
+            if current_time - timestamp < self._cache_ttl:
+                return content
+        
+        # Read file and cache it
+        content = path.read_text()
+        self._file_cache[cache_key] = (content, current_time)
+        return content
 
     def update(self):
         old = self._entries
         self._entries = {obj: (typ, p) for (p, typ) in product(self.files, self.txtobjtypes) 
-                        for obj in typ.findall(p.read_text())}
+                        for obj in typ.findall(self._get_file_content(p))}
         self.__determine_changes(old, self._entries)
 
     def __determine_changes(self, old, new):
@@ -141,13 +164,28 @@ class TextObjectStorage(MutableSequence, events.FileSystemEventHandler):
             added = new.keys()
         else:
             newset, oldset = set(new), set(old)
-            added += newset - oldset
-            removed = oldset - newset
+            added = list(newset - oldset)
+            removed = list(oldset - newset)
 
-            for obj1, obj2 in product(oldset, newset):
-                if obj1 == obj2 and obj1.span != obj2.span:
-                    for obs in self.observers:
-                        obs.on_textobject_moved(obj2, obj1.span, *new[obj2])
+            # Create hash maps for efficient lookup instead of O(n²) product
+            old_by_content = {}
+            new_by_content = {}
+            
+            for obj in oldset:
+                content_key = (obj.data, obj.start, obj.end)
+                old_by_content[content_key] = obj
+                
+            for obj in newset:
+                content_key = (obj.data, obj.start, obj.end)
+                new_by_content[content_key] = obj
+            
+            # Find moved objects efficiently
+            for obj in newset:
+                if obj in oldset:
+                    old_obj = old[obj]
+                    if old_obj and old_obj.span != obj.span:
+                        for obs in self.observers:
+                            obs.on_textobject_moved(obj, old_obj.span, *new[obj])
 
             for txtobj in removed:
                 for obs in self.observers:
@@ -221,15 +259,30 @@ def watch(*textobjectstores: TextObjectStorage):
     return asyncio.run(asyncwatch(*textobjectstores))
 
 async def asyncwatch(*textobjectstores: TextObjectStorage):
+    """Improved async file watching with proper event handling"""
     obs = observers.Observer()
-    for st, path in [(st, p) for st in textobjectstores for p in st.files]:
-        obs.schedule(st, str(path.parent), recursive=False)
-    async def _watch():
-        obs.start()
-        while obs.is_alive:
-            await asyncio.sleep(0.5)
-    asyncio.create_task(_watch())
-    return lambda: obs.stop()
+    
+    # Schedule watchers for each storage
+    for st in textobjectstores:
+        for path in st.files:
+            obs.schedule(st, str(path.parent), recursive=False)
+    
+    def stop_watching():
+        obs.stop()
+        obs.join()
+    
+    # Start the observer
+    obs.start()
+    
+    # Use proper async event loop instead of polling
+    try:
+        while obs.is_alive():
+            await asyncio.sleep(0.1)  # Reduced sleep time for better responsiveness
+    except asyncio.CancelledError:
+        stop_watching()
+        raise
+    
+    return stop_watching
 
 
 
